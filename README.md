@@ -1,4 +1,4 @@
-# EC Duty Roster Translator
+# EC Shift Roster Translator
 
 A browser-based tool that parses monthly shift roster PDFs and generates WCG-formatted duty roster timesheets, overtime verification forms, and leave application documents — entirely offline, no installation required.
 
