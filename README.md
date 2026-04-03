@@ -32,9 +32,6 @@ A browser-based tool that parses monthly shift roster PDFs and generates WCG-for
 ### GitHub Pages
 Open the hosted URL directly in any modern browser.
 
-### Local (Windows)
-Double-click `start.bat` — launches a local server and opens the app automatically. No Python or Node.js required.
-
 ### Local (other)
 Serve the folder with any static file server, or open `index.html` directly in a browser (Chrome/Edge recommended for PDF parsing).
 
@@ -68,7 +65,6 @@ js/
   pdf.worker.min.js PDF.js worker
   xlsx.full.min.js  SheetJS
   jszip.min.js      JSZip
-start.bat           Windows launcher (no install needed)
 README.md
 ```
 
