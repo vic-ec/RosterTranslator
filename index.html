@@ -3019,6 +3019,9 @@ function applyProfile(profile) {
   $('headerTitle').textContent = `Duty Roster Translator — ${ecShort}`;
   // Store in localStorage for offline use
   localStorage.setItem(LS_PROFILE_KEY, JSON.stringify(profile));
+  // Show/hide consultant zone based on profile type
+  // (safe to call even before DOM is fully ready — guarded inside)
+  if (typeof updateConsultantZoneVisibility === 'function') updateConsultantZoneVisibility();
 }
 
 function showEcSelected(name) {
@@ -3150,9 +3153,6 @@ function updateConsultantZoneVisibility() {
   wrap.style.display = isConsultant ? '' : 'none';
 }
 
-// Patch applyProfile to also update consultant zone visibility
-const _origApplyProfile = applyProfile;
-// We wrap it after DOM is ready (see DOMContentLoaded below)
 
 function setConsultantFile(file) {
   state.consultantFile = file;
@@ -3242,13 +3242,8 @@ function overlayConsultantShifts(doctorName, targetMonth) {
 
 document.addEventListener('DOMContentLoaded', () => {
 
-  // Show/hide consultant zone when profile is applied
-  const _orig = applyProfile;
-  window.applyProfile = function(profile) {
-    _orig(profile);
-    updateConsultantZoneVisibility();
-  };
-  // Also update now in case profile was already applied before DOM ready
+  // Consultant zone visibility is now handled directly inside applyProfile.
+  // Run once now in case profile was applied before this DOMContentLoaded fired.
   updateConsultantZoneVisibility();
 
   // Consultant file input
