@@ -181,7 +181,17 @@ header h1 { font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.92); }
 .row-undo { background:none; color:#a0a09a; display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border:none; border-radius:3px; cursor:pointer; font-size:13px; font-weight:700; line-height:1; padding:0; }
 .row-undo:hover { color:#e09a3a; background:rgba(224,154,58,0.1); }
 
-/* ── STEP 0 — EC SELECTOR ─────────────────────────────────── */
+/* ── CONSULTANT ROSTER UPLOAD ─────────────────────────────── */
+.upload-zone-consultant { border-color: #5b9bd5 !important; background: #f0f6fc !important; }
+.upload-zone-consultant .upload-icon { filter: hue-rotate(180deg); }
+.upload-zone-consultant .upload-label { color: #2a5a8a; }
+.upload-zone-consultant .upload-hint  { color: #5b9bd5; }
+.consultant-badge { display:inline-flex; align-items:center; gap:6px; padding:5px 10px; background:#e8f2fc; border:1px solid #5b9bd5; border-radius:var(--radius); font-size:11px; font-family:var(--mono); color:#2a5a8a; margin-top:8px; }
+.consultant-badge .cb-remove { background:none; border:none; cursor:pointer; color:#5b9bd5; font-size:14px; line-height:1; padding:0 2px; margin-left:4px; }
+.consultant-badge .cb-remove:hover { color:var(--warn); }
+#consultantZoneWrap { display:none; margin-top:12px; padding-top:12px; border-top:1px solid var(--border); }
+
+</style>
 #step0 { border: 2px solid var(--accent); }
 #step0 .card-num { background: var(--accent-mid); }
 .ec-select-wrap { display:flex; flex-direction:column; gap:12px; }
@@ -259,6 +269,25 @@ header h1 { font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.92); }
       <div style="margin-top:12px;" class="actions-row">
         <button class="btn btn-primary" id="parseBtn" disabled>Extract Data</button>
         <button class="btn btn-secondary" id="clearBtn" style="display:none;">Clear All</button>
+      </div>
+
+      <!-- Consultant roster zone — shown only when profile is consultant type -->
+      <div id="consultantZoneWrap">
+        <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">Consultant Roster (optional)</div>
+        <label class="upload-zone upload-zone-consultant" id="consultantZone" style="position:relative;">
+          <input type="file" id="consultantFile" accept=".pdf"
+                 style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:1;">
+          <span class="upload-icon">&#128196;</span>
+          <span class="upload-label">Consultant On-Call Roster</span>
+          <span class="upload-hint">PDF &mdash; click to browse or drag &amp; drop</span>
+        </label>
+        <div id="consultantBadge" style="display:none;">
+          <div class="consultant-badge">
+            <span>&#128196;</span>
+            <span id="consultantFileName"></span>
+            <button class="cb-remove" id="consultantRemoveBtn">&times;</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -902,6 +931,251 @@ function getDoctorShifts(rosterData, doctorName, targetMonth) {
     if (!shiftDef) shiftDef = (day.isWeekend ? WEEKEND_SHIFTS : WEEKDAY_SHIFTS)[0];
     result[day.date] = { start:shiftDef.start, end:shiftDef.end, label:shiftDef.label,
       dayName:day.dayName, isWeekend:day.isWeekend };
+  }
+  return result;
+}
+
+
+// ── Consultant Roster PDF Parser ────────────────────────────────────────────
+// Profile-driven: reads column boundaries and time rules from activeProfile.
+// Returns { days, doctors } in the same format as parseRosterPDF / parseRosterExcel.
+
+async function parseConsultantRosterPDF(arrayBuffer, profile) {
+  const cols  = profile.pdf_columns;   // {slot1,slot2,slot3,meetings,leave,call}
+  const rules = profile.time_rules;    // weekday/weekend time bands
+  const knownNames = new Set((profile.known_names || []).map(n => n.toLowerCase()));
+
+  const pdf   = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
+  const page  = await pdf.getPage(1);
+  const tc    = await page.getTextContent();
+  const vp    = page.getViewport({ scale: 1 });
+  const H     = vp.height;
+
+  // ── Collect words with x/y (PDF y is bottom-up → flip to top-down) ──
+  const words = [];
+  for (const item of tc.items) {
+    if (!item.str.trim()) continue;
+    // Split fused tokens like "1Wednesday" into date+weekday
+    const fused = item.str.match(/^(\d{1,2})([A-Z][a-z]+)$/);
+    if (fused) {
+      const x = item.transform[4];
+      const y = H - item.transform[5];
+      words.push({ text: fused[1], x, y });
+      words.push({ text: fused[2], x: x + 8, y });
+    } else {
+      words.push({ text: item.str.trim(), x: item.transform[4], y: H - item.transform[5] });
+    }
+  }
+
+  // ── Find data start row: first row whose y >= profile.data_start_y ──
+  const DATA_Y = profile.data_start_y || 188;
+  const dataWords = words.filter(w => w.y >= DATA_Y);
+
+  // ── Group words into rows by y (±4px tolerance) ──
+  const rowMap = new Map();
+  for (const w of dataWords) {
+    const ry = Math.round(w.y / 4) * 4;
+    if (!rowMap.has(ry)) rowMap.set(ry, []);
+    rowMap.get(ry).push(w);
+  }
+  const rows = [...rowMap.entries()]
+    .sort((a, b) => a[0] - b[0])
+    .map(([, ws]) => ws.sort((a, b) => a.x - b.x));
+
+  // ── Column assignment ──
+  const WEEKDAYS = new Set(['Monday','Tuesday','Wednesday','Thursday','Friday']);
+  const WEEKENDS = new Set(['Saturday','Sunday']);
+  const MONTHS_IDX = {January:0,February:1,March:2,April:3,May:4,June:5,
+    July:6,August:7,September:8,October:9,November:10,December:11};
+
+  function colFor(x) {
+    for (const [name, {x_min, x_max}] of Object.entries(cols)) {
+      if (x >= x_min && x < x_max) return name;
+    }
+    return null;
+  }
+
+  // Join compound surnames: "De" + "Haan" → "De Haan"
+  // Also handles slash pairs: "Cloete" + "/" + "Els" → "Cloete/Els"
+  function joinTokens(tokens) {
+    const result = [];
+    let i = 0;
+    while (i < tokens.length) {
+      const t = tokens[i];
+      // Check if next token is "/" then a name (slash pair)
+      if (i + 2 < tokens.length && tokens[i+1] === '/') {
+        result.push(t + '/' + tokens[i+2]);
+        i += 3;
+        continue;
+      }
+      // Check if this looks like first part of compound surname (De, Van, etc.)
+      if (i + 1 < tokens.length && NAME_PREFIXES.has(t) &&
+          /^[A-Z][a-z]+$/.test(tokens[i+1])) {
+        result.push(t + ' ' + tokens[i+1]);
+        i += 2;
+        continue;
+      }
+      result.push(t);
+      i++;
+    }
+    return result;
+  }
+
+  // ── Parse each row ──
+  const days = [];
+  const doctors = new Set();
+  let currentDate = null, currentDayName = null, currentMonth = null;
+
+  for (const rowWords of rows) {
+    // Bucket words by column
+    const buckets = { slot1:[], slot2:[], slot3:[], meetings:[], leave:[], call:[] };
+    let dateNum = null, weekdayName = null;
+
+    for (const w of rowWords) {
+      const c = colFor(w.x);
+      // Date column (x < slot1.x_min)
+      if (w.x < cols.slot1.x_min) {
+        if (/^\d{1,2}$/.test(w.text)) dateNum = parseInt(w.text);
+        else if (WEEKDAYS.has(w.text) || WEEKENDS.has(w.text)) weekdayName = w.text;
+      } else if (c && c in buckets) {
+        buckets[c].push(w.text);
+      }
+    }
+
+    if (dateNum !== null && weekdayName) {
+      currentDate    = dateNum;
+      currentDayName = weekdayName;
+    }
+    if (currentDate === null) continue;
+
+    // Parse slot names
+    const slot1Names = joinTokens(buckets.slot1);
+    const slot2Names = joinTokens(buckets.slot2);
+    const slot3Names = joinTokens(buckets.slot3);
+
+    // Parse leave: "De Haan Leave" → name is "De Haan", "Leave" is literal word
+    const leaveRaw = joinTokens(buckets.leave.filter(t => t !== 'Leave'));
+    const isLeave  = buckets.leave.includes('Leave') || leaveRaw.length > 0;
+    const leaveNames = leaveRaw;
+
+    // Parse call: names + optional trailing number
+    const callRaw   = buckets.call.filter(t => !/^\d+$/.test(t));
+    const callNames = joinTokens(callRaw);
+
+    // Collect all names on this day for the doctors set
+    const allSlotNames = [...slot1Names, ...slot2Names, ...slot3Names];
+    for (const name of allSlotNames) {
+      // Expand slash pairs
+      for (const n of name.split('/')) {
+        const trimmed = n.trim();
+        if (trimmed.length > 1) doctors.add(trimmed);
+      }
+    }
+    for (const name of callNames) {
+      for (const n of name.split('/')) {
+        const trimmed = n.trim();
+        if (trimmed.length > 1) doctors.add(trimmed);
+      }
+    }
+
+    const isWeekend = WEEKENDS.has(currentDayName);
+    const isPublicHoliday = false; // PH detection can be added later
+
+    days.push({
+      date: currentDate,
+      dayName: currentDayName,
+      isWeekend,
+      // Consultant-specific fields
+      slot1: slot1Names,
+      slot2: slot2Names,
+      slot3: slot3Names,
+      callNames,
+      leaveNames,
+      isLeave: isLeave && leaveNames.length > 0,
+      // Keep month from filename/year detection — set post-parse
+      month: null,
+      monthName: null,
+      // Standard fields for compatibility
+      allNames: [...new Set([...allSlotNames.flatMap(n=>n.split('/')).map(n=>n.trim()),
+                             ...callNames.flatMap(n=>n.split('/')).map(n=>n.trim())])],
+      shifts: [slot1Names, slot2Names, slot3Names, callNames],
+      shiftType: isWeekend ? 'weekend' : 'weekday',
+      consultant: null,
+      rosterType: 'consultant',
+    });
+  }
+
+  return { days, doctors };
+}
+
+// ── getConsultantShifts ──────────────────────────────────────────────────────
+// Converts a consultant roster day into editedShifts entries for a named doctor.
+// Returns { [date]: { nf, nt, of, ot, typeLabel } }
+
+function getConsultantShifts(consultantData, doctorName, targetMonth, profile) {
+  if (!consultantData || !profile) return {};
+  const result = {};
+  const rules = profile.time_rules || {};
+  const nl = doctorName.toLowerCase();
+
+  // Helper: find if a name (possibly slash-pair) matches the target doctor
+  const nameMatches = (name) => {
+    if (!name) return false;
+    return name.split('/').some(n => n.trim().toLowerCase() === nl);
+  };
+
+  for (const day of consultantData.days) {
+    if (day.month !== targetMonth) continue;
+
+    const inSlot1 = day.slot1.some(nameMatches);
+    const inSlot2 = day.slot2.some(nameMatches);
+    const inSlot3 = day.slot3.some(nameMatches);
+    const inCall  = day.callNames.some(nameMatches);
+    const onLeave = day.leaveNames.some(nameMatches);
+
+    if (onLeave) {
+      result[day.date] = { nf:'', nt:'', of:'', ot:'', typeLabel:'Annual Leave' };
+      continue;
+    }
+
+    if (!inSlot1 && !inSlot2 && !inSlot3 && !inCall) continue;
+
+    const isWE = day.isWeekend;
+
+    // Determine time rule key
+    let rule = null;
+    if (isWE) {
+      rule = rules.weekend_ph;
+    } else if (inSlot1 && inCall) {
+      rule = rules.weekday_slot1_oncall;
+    } else if (inSlot1) {
+      rule = rules.weekday_slot1_no_oncall;
+    } else if (inSlot2 || inSlot3) {
+      rule = rules.weekday_slot2_3;
+    } else if (inCall) {
+      rule = rules.weekday_call_only;
+    }
+
+    if (!rule) continue;
+
+    // Build times from rule — normal + OT1 + OT2 where present
+    const nf = rule.normal ? rule.normal[0] : '';
+    const nt = rule.normal ? rule.normal[1] : '';
+    const of_ = rule.ot1   ? rule.ot1[0]   : (rule.ot2 ? rule.ot2[0] : '');
+    const ot  = rule.ot1   ? rule.ot1[1]   : (rule.ot2 ? rule.ot2[1] : '');
+
+    // Label for preview table
+    const label = isWE
+      ? 'WE Shift - 07H30'
+      : (nf ? `WD Shift - ${nf.replace(':','H')}` : 'WD Shift - 07H30');
+
+    result[day.date] = {
+      nf: nf.replace(':','H'),
+      nt: nt.replace(':','H'),
+      of: of_.replace(':','H'),
+      ot: ot.replace(':','H'),
+      typeLabel: label,
+    };
   }
   return result;
 }
@@ -1993,6 +2267,8 @@ const state={
   availableMonths:new Set(),
   savedDetails:{firstName:'',surname:'',persal:'',supervisor:'',sigDate:'',designation:'',designationOther:'',shiftWorker:'yes',casualEmployee:'no',addressDuringLeave:''},
   phMap:null,
+  // Consultant roster
+  consultantFile:null, consultantData:null,
 };
 
 const $=id=>document.getElementById(id);
@@ -2191,6 +2467,7 @@ $('clearBtn').addEventListener('click',()=>{
   state.pendingFiles=[];state.parsedFiles=[];state.rosterData=null;state.selectedDoctor=null;
   state.editedShifts={};state.originalShifts={};state.dirtyDays.clear();state.availableMonths=new Set();
   state.savedDetails={firstName:'',surname:'',persal:'',supervisor:'',sigDate:'',designation:'',designationOther:'',shiftWorker:'yes',casualEmployee:'no',addressDuringLeave:''};
+  state.consultantFile=null;state.consultantData=null;if($('consultantZone')) setConsultantFile(null);
   renderFileList();$('parseBtn').disabled=true;$('clearBtn').style.display='none';
   rosterList.style.display='none';setStatus('Waiting for roster file\u2026');
   $('doctorGrid').innerHTML='<div class="empty">No roster parsed yet</div>';
@@ -2228,11 +2505,28 @@ $('parseBtn').addEventListener('click',async()=>{
     }catch(err){console.error('Parse error',file.name,err);errors++;state.pendingFiles=state.pendingFiles.filter(f=>f.name!==file.name);}
   }
   mergeAndRefresh();renderFileList();
-  const total=state.rosterData?.days.length||0,docs=state.rosterData?.doctors.size||0;
-  setStatus(errors
-    ?`\u2713 Extracted with ${errors} error(s) \u2014 ${total} days, ${docs} staff`
-    :`\u2713 ${total} days \u00b7 ${docs} staff across ${state.parsedFiles.length} file(s)`
-    ,errors?'error':'success');
+  // Parse consultant roster if one is queued
+  if(state.consultantFile){
+    try{
+      await parseAndStoreConsultantRoster();
+      const cDocs=state.consultantData?.doctors?.size||0;
+      const total2=state.rosterData?.days.length||0,docs2=state.rosterData?.doctors.size||0;
+      setStatus(errors
+        ?`\u2713 Extracted with ${errors} error(s) \u2014 ${total2} days, ${docs2} staff`
+        :`\u2713 ${total2} days \u00b7 ${docs2} staff \u00b7 ${cDocs} consultant(s)`
+        ,errors?'error':'success');
+    }catch(cerr){
+      console.error('Consultant parse error',cerr);
+      const total=state.rosterData?.days.length||0,docs=state.rosterData?.doctors.size||0;
+      setStatus(`\u2713 ${total} days \u00b7 ${docs} staff (consultant parse failed)`,'error');
+    }
+  } else {
+    const total=state.rosterData?.days.length||0,docs=state.rosterData?.doctors.size||0;
+    setStatus(errors
+      ?`\u2713 Extracted with ${errors} error(s) \u2014 ${total} days, ${docs} staff`
+      :`\u2713 ${total} days \u00b7 ${docs} staff across ${state.parsedFiles.length} file(s)`
+      ,errors?'error':'success');
+  }
   btn.disabled=state.pendingFiles.length>0?false:true;
   btn.textContent='Extract Data';
 });
@@ -2316,6 +2610,15 @@ function buildPreview(doctorName,targetMonth,targetYear){
     state.editedShifts[parseInt(d)]={nf,nt,of:otF,ot:otT,label:shift.label,typeLabel,isWE:shift.isWeekend};
   }
   state.originalShifts=JSON.parse(JSON.stringify(state.editedShifts));
+  // Overlay consultant shifts for days not already covered by shift roster
+  const consultantAdded = overlayConsultantShifts(doctorName, targetMonth);
+  if (consultantAdded > 0) {
+    // Merge into originalShifts so undo works correctly
+    for (const [d, s] of Object.entries(state.editedShifts)) {
+      if (!state.originalShifts[d]) state.originalShifts[d] = { ...s };
+    }
+    console.log('[Consultant] Overlaid', consultantAdded, 'shifts for', doctorName);
+  }
   let sc=0;
   // Build PH letter map: day number -> superscript letter (a,b,c...)
   const phLetterMap={};
@@ -2695,7 +2998,15 @@ let activeProfile = null;
 async function fetchProfiles() {
   const res = await fetch(
     `${SUPA_URL}/rest/v1/ec_profiles?status=eq.approved&select=id,ec_name,ec_short,profile`,
-    { headers: { 'apikey': SUPA_ANON, 'Authorization': 'Bearer ' + SUPA_ANON } }
+    {
+      method: 'GET',
+      headers: {
+        'apikey': SUPA_ANON,
+        'Authorization': 'Bearer ' + SUPA_ANON,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      }
+    }
   );
   if (!res.ok) throw new Error('Fetch failed: ' + res.status);
   return res.json();
@@ -2757,7 +3068,7 @@ async function initEcSelector() {
     // Cache the list for next time
     localStorage.setItem(LS_PROFILES_KEY, JSON.stringify(profiles));
   } catch (e) {
-    console.warn('Could not fetch EC profiles:', e);
+    console.warn('Could not fetch EC profiles:', e.message || e);
   }
 
   if (!profiles) {
@@ -2823,6 +3134,151 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Run initialisation
   initEcSelector();
+});
+
+
+// ═══════════════════════════════════════════════════════════════
+// CONSULTANT ROSTER FILE HANDLING
+// ═══════════════════════════════════════════════════════════════
+
+// Show/hide the consultant upload zone based on the active profile type.
+// Called whenever a profile is applied.
+function updateConsultantZoneVisibility() {
+  const wrap = $('consultantZoneWrap');
+  if (!wrap) return;
+  const isConsultant = activeProfile && activeProfile.roster_type === 'consultant';
+  wrap.style.display = isConsultant ? '' : 'none';
+}
+
+// Patch applyProfile to also update consultant zone visibility
+const _origApplyProfile = applyProfile;
+// We wrap it after DOM is ready (see DOMContentLoaded below)
+
+function setConsultantFile(file) {
+  state.consultantFile = file;
+  state.consultantData = null; // reset parsed data when new file selected
+  if (file) {
+    $('consultantBadge').style.display   = '';
+    $('consultantZone').style.display    = 'none';
+    $('consultantFileName').textContent  = file.name;
+  } else {
+    $('consultantBadge').style.display   = 'none';
+    $('consultantZone').style.display    = '';
+    state.consultantFile = null;
+  }
+}
+
+// Parse consultant PDF and assign months to days based on year detection
+async function parseAndStoreConsultantRoster() {
+  if (!state.consultantFile || !activeProfile) return;
+  try {
+    const buf = await readFile(state.consultantFile);
+    const result = await parseConsultantRosterPDF(buf, activeProfile);
+
+    // Detect year from filename or current year
+    const fnYear = (state.consultantFile.name.match(/20(\d{2})/) || [])[0];
+    const year = fnYear ? parseInt(fnYear) : new Date().getFullYear();
+
+    // Detect month: take the dominant month from day count
+    // For consultant rosters the month is implicit — infer from day sequence
+    // (days 1-31 form one month; the PDF title or filename usually contains the month)
+    const monthMatch = state.consultantFile.name.match(
+      /January|February|March|April|May|June|July|August|September|October|November|December/i
+    );
+    const MONTHS_IDX = {january:0,february:1,march:2,april:3,may:4,june:5,
+      july:6,august:7,september:8,october:9,november:10,december:11};
+    const detectedMonth = monthMatch
+      ? MONTHS_IDX[monthMatch[0].toLowerCase()]
+      : new Date().getMonth();
+
+    // Assign month to each day
+    for (const d of result.days) {
+      d.month = detectedMonth;
+      d.monthName = Object.keys(MONTHS_IDX).find(k => MONTHS_IDX[k] === detectedMonth) || '';
+    }
+
+    state.consultantData = result;
+    console.log('[Consultant] Parsed', result.days.length, 'days,', result.doctors.size, 'doctors');
+
+    // Merge consultant doctors into the main roster doctors grid
+    if (state.rosterData) {
+      result.doctors.forEach(d => state.rosterData.doctors.add(d));
+      buildDoctorGrid(state.rosterData.doctors);
+    } else {
+      // No shift roster loaded — create a minimal rosterData from consultant data only
+      state.rosterData = { days: result.days, doctors: result.doctors };
+      state.availableMonths = new Set([detectedMonth]);
+      buildDoctorGrid(result.doctors);
+      $('monthSelect').value = detectedMonth;
+      $('yearInput').value = year;
+      step2.style.display = ''; unlock(step2);
+      rebuildMonthDropdown();
+      checkReady();
+    }
+  } catch(err) {
+    console.error('[Consultant] Parse error:', err);
+    alert('Could not parse consultant roster: ' + err.message);
+  }
+}
+
+// Override buildPreview to inject consultant shifts when available
+// Consultant shift overlay — called from within buildPreview
+function overlayConsultantShifts(doctorName, targetMonth) {
+  if (!state.consultantData || !activeProfile || activeProfile.roster_type !== 'consultant') return 0;
+  const consultantShifts = getConsultantShifts(
+    state.consultantData, doctorName, targetMonth, activeProfile
+  );
+  let added = 0;
+  for (const [dateStr, shift] of Object.entries(consultantShifts)) {
+    const d = parseInt(dateStr);
+    if (!state.editedShifts[d]) {
+      state.editedShifts[d] = shift;
+      state.originalShifts[d] = { ...shift };
+      added++;
+    }
+  }
+  return added;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+
+  // Show/hide consultant zone when profile is applied
+  const _orig = applyProfile;
+  window.applyProfile = function(profile) {
+    _orig(profile);
+    updateConsultantZoneVisibility();
+  };
+  // Also update now in case profile was already applied before DOM ready
+  updateConsultantZoneVisibility();
+
+  // Consultant file input
+  const cFile = $('consultantFile');
+  if (cFile) {
+    cFile.addEventListener('change', e => {
+      if (e.target.files[0]) setConsultantFile(e.target.files[0]);
+      cFile.value = '';
+    });
+  }
+
+  // Drag and drop on consultant zone
+  const cZone = $('consultantZone');
+  if (cZone) {
+    cZone.addEventListener('dragover', e => { e.preventDefault(); cZone.classList.add('drag-over'); });
+    cZone.addEventListener('dragleave', () => cZone.classList.remove('drag-over'));
+    cZone.addEventListener('drop', e => {
+      e.preventDefault(); cZone.classList.remove('drag-over');
+      const f = e.dataTransfer.files[0];
+      if (f && f.name.endsWith('.pdf')) setConsultantFile(f);
+    });
+  }
+
+  // Remove consultant file
+  const cRemove = $('consultantRemoveBtn');
+  if (cRemove) {
+    cRemove.addEventListener('click', () => setConsultantFile(null));
+  }
+
+  // Consultant parse is handled inside the main parseBtn click handler
 });
 
 </script>
