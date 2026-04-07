@@ -181,15 +181,18 @@ header h1 { font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.92); }
 .row-undo { background:none; color:#a0a09a; display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border:none; border-radius:3px; cursor:pointer; font-size:13px; font-weight:700; line-height:1; padding:0; }
 .row-undo:hover { color:#e09a3a; background:rgba(224,154,58,0.1); }
 
+/* ── UPLOAD ZONES SIDE-BY-SIDE ────────────────────────────── */
+.upload-zones-row { display:flex; gap:16px; align-items:flex-start; }
+.upload-zone-col { flex:1; min-width:0; display:flex; flex-direction:column; gap:8px; }
+.upload-zone-label { font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; }
+@media(max-width:600px){ .upload-zones-row { flex-direction:column; } }
+
 /* ── CONSULTANT ROSTER UPLOAD ─────────────────────────────── */
 .upload-zone-consultant { border-color: #5b9bd5 !important; background: #f0f6fc !important; }
 .upload-zone-consultant .upload-icon { filter: hue-rotate(180deg); }
 .upload-zone-consultant .upload-label { color: #2a5a8a; }
 .upload-zone-consultant .upload-hint  { color: #5b9bd5; }
-.consultant-badge { display:inline-flex; align-items:center; gap:6px; padding:5px 10px; background:#e8f2fc; border:1px solid #5b9bd5; border-radius:var(--radius); font-size:11px; font-family:var(--mono); color:#2a5a8a; margin-top:8px; }
-.consultant-badge .cb-remove { background:none; border:none; cursor:pointer; color:#5b9bd5; font-size:14px; line-height:1; padding:0 2px; margin-left:4px; }
-.consultant-badge .cb-remove:hover { color:var(--warn); }
-#consultantZoneWrap { display:none; margin-top:12px; padding-top:12px; border-top:1px solid var(--border); }
+#consultantZoneWrap { display:none; }
 
 /* ── STEP 0 — EC SELECTOR ─────────────────────────────────── */
 #step0 { border: 2px solid var(--accent); }
@@ -253,41 +256,47 @@ header h1 { font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.92); }
   </div>
 
   <div class="card" id="step1">
-    <div class="card-header"><div class="card-num">1</div><div class="card-title">Upload Shift Roster(s)</div></div>
+    <div class="card-header"><div class="card-num">1</div><div class="card-title">Upload Roster Files</div></div>
     <div class="card-body">
       <div class="info-note" style="margin-bottom:16px;"><span class="icon">&#x2139;</span>
-        <span>Upload one or more monthly shift roster PDFs or Excel files. Multiple months can be loaded at once.</span></div>
-      <label class="upload-zone" id="rosterZone">
-        <input type="file" id="rosterFile" accept=".pdf,.xlsx,.xls" multiple
-               style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:1;">
-        <span class="upload-icon">&#128203;</span>
-        <span class="upload-label">Shift Roster(s)</span>
-        <span class="upload-hint">PDF or Excel &mdash; click to browse or drag &amp; drop</span>
-      </label>
-      <div id="rosterList" class="roster-list" style="display:none;"></div>
-      <div style="margin-top:12px;"><div id="parseStatus" class="status-bar">Waiting for roster file&hellip;</div></div>
-      <div style="margin-top:12px;" class="actions-row">
-        <button class="btn btn-primary" id="parseBtn" disabled>Extract Data</button>
-        <button class="btn btn-secondary" id="clearBtn" style="display:none;">Clear All</button>
+        <span>Upload one or more monthly roster files. Multiple months can be loaded at once.</span></div>
+
+      <!-- Side-by-side upload zones -->
+      <div class="upload-zones-row">
+
+        <!-- Shift roster zone (always visible) -->
+        <div class="upload-zone-col">
+          <div class="upload-zone-label">EC Shift Roster(s)</div>
+          <label class="upload-zone" id="rosterZone">
+            <input type="file" id="rosterFile" accept=".pdf,.xlsx,.xls" multiple
+                   style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:1;">
+            <span class="upload-icon">&#128203;</span>
+            <span class="upload-label">Upload EC Shift Roster(s)</span>
+            <span class="upload-hint">PDF or Excel &mdash; click or drag &amp; drop</span>
+          </label>
+          <div id="rosterList" class="roster-list" style="display:none;"></div>
+        </div>
+
+        <!-- Consultant roster zone (shown when profile is consultant type) -->
+        <div class="upload-zone-col" id="consultantZoneWrap">
+          <div class="upload-zone-label">EC Consultant On-Call Roster(s) <span style="font-weight:400;color:var(--text-faint)">(optional)</span></div>
+          <label class="upload-zone upload-zone-consultant" id="consultantZone">
+            <input type="file" id="consultantFile" accept=".pdf" multiple
+                   style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:1;">
+            <span class="upload-icon">&#128196;</span>
+            <span class="upload-label">Upload EC Consultant On-Call Roster(s)</span>
+            <span class="upload-hint">PDF &mdash; click or drag &amp; drop</span>
+          </label>
+          <div id="consultantBadgeList" class="roster-list" style="display:none;"></div>
+        </div>
+
       </div>
 
-      <!-- Consultant roster zone — shown only when profile is consultant type -->
-      <div id="consultantZoneWrap">
-        <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">Consultant Roster (optional)</div>
-        <label class="upload-zone upload-zone-consultant" id="consultantZone" style="position:relative;">
-          <input type="file" id="consultantFile" accept=".pdf"
-                 style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:1;">
-          <span class="upload-icon">&#128196;</span>
-          <span class="upload-label">Consultant On-Call Roster</span>
-          <span class="upload-hint">PDF &mdash; click to browse or drag &amp; drop</span>
-        </label>
-        <div id="consultantBadge" style="display:none;">
-          <div class="consultant-badge">
-            <span>&#128196;</span>
-            <span id="consultantFileName"></span>
-            <button class="cb-remove" id="consultantRemoveBtn">&times;</button>
-          </div>
-        </div>
+      <!-- Status + actions below both zones -->
+      <div style="margin-top:14px;"><div id="parseStatus" class="status-bar">Waiting for roster file&hellip;</div></div>
+      <div style="margin-top:12px;" class="actions-row">
+        <button class="btn btn-primary" id="parseBtn" disabled style="min-width:200px;">Extract Data</button>
+        <button class="btn btn-secondary" id="clearBtn" style="display:none;">Clear All</button>
       </div>
     </div>
   </div>
@@ -2268,7 +2277,7 @@ const state={
   savedDetails:{firstName:'',surname:'',persal:'',supervisor:'',sigDate:'',designation:'',designationOther:'',shiftWorker:'yes',casualEmployee:'no',addressDuringLeave:''},
   phMap:null,
   // Consultant roster
-  consultantFile:null, consultantData:null,
+  consultantFile:null, consultantFiles:[], consultantData:null,
 };
 
 const $=id=>document.getElementById(id);
@@ -2467,7 +2476,7 @@ $('clearBtn').addEventListener('click',()=>{
   state.pendingFiles=[];state.parsedFiles=[];state.rosterData=null;state.selectedDoctor=null;
   state.editedShifts={};state.originalShifts={};state.dirtyDays.clear();state.availableMonths=new Set();
   state.savedDetails={firstName:'',surname:'',persal:'',supervisor:'',sigDate:'',designation:'',designationOther:'',shiftWorker:'yes',casualEmployee:'no',addressDuringLeave:''};
-  state.consultantFile=null;state.consultantData=null;if($('consultantZone')) setConsultantFile(null);
+  state.consultantFile=null;state.consultantFiles=[];state.consultantData=null;if($('consultantZone')) setConsultantFile(null);
   renderFileList();$('parseBtn').disabled=true;$('clearBtn').style.display='none';
   rosterList.style.display='none';setStatus('Waiting for roster file\u2026');
   $('doctorGrid').innerHTML='<div class="empty">No roster parsed yet</div>';
@@ -2590,30 +2599,38 @@ $('previewBtn').addEventListener('click',()=>{
 
 function buildPreview(doctorName,targetMonth,targetYear){
   const holidays=getSAPublicHolidays(targetYear);
-  const rawShifts=getDoctorShifts(state.rosterData,doctorName,targetMonth);
   const daysInMonth=new Date(targetYear,targetMonth+1,0).getDate();
   state.editedShifts={};
-  for(const [d,shift] of Object.entries(rawShifts)){
-    const {nf,nt,of:otF,ot:otT}=splitShift(shift.start,shift.end);
-    // Map parsed shift label to specific shift type
-    let typeLabel='WD Shift - 08H00';
-    if(shift.isWeekend){
-      if(shift.start==='08:00') typeLabel='WE Shift - 08H00';
-      else if(shift.start==='13:00') typeLabel='WE Shift - 13H00';
-      else typeLabel='WE Shift - 20H00';
-    } else {
-      if(shift.start==='08:00') typeLabel='WD Shift - 08H00';
-      else if(shift.start==='12:00') typeLabel='WD Shift - 12H00';
-      else if(shift.start==='15:00') typeLabel='WD Shift - 15H00';
-      else typeLabel='WD Shift - 22H00';
+
+  // Consultant-type profile: use consultant parser output only
+  // Skip getDoctorShifts entirely — consultant days in rosterData use different column semantics
+  const isConsultantMode = activeProfile && activeProfile.roster_type === 'consultant' && state.consultantData;
+
+  if (!isConsultantMode) {
+    // Standard shift roster path
+    const rawShifts=getDoctorShifts(state.rosterData,doctorName,targetMonth);
+    for(const [d,shift] of Object.entries(rawShifts)){
+      const {nf,nt,of:otF,ot:otT}=splitShift(shift.start,shift.end);
+      let typeLabel='WD Shift - 08H00';
+      if(shift.isWeekend){
+        if(shift.start==='08:00') typeLabel='WE Shift - 08H00';
+        else if(shift.start==='13:00') typeLabel='WE Shift - 13H00';
+        else typeLabel='WE Shift - 20H00';
+      } else {
+        if(shift.start==='08:00') typeLabel='WD Shift - 08H00';
+        else if(shift.start==='12:00') typeLabel='WD Shift - 12H00';
+        else if(shift.start==='15:00') typeLabel='WD Shift - 15H00';
+        else typeLabel='WD Shift - 22H00';
+      }
+      state.editedShifts[parseInt(d)]={nf,nt,of:otF,ot:otT,label:shift.label,typeLabel,isWE:shift.isWeekend};
     }
-    state.editedShifts[parseInt(d)]={nf,nt,of:otF,ot:otT,label:shift.label,typeLabel,isWE:shift.isWeekend};
   }
+
   state.originalShifts=JSON.parse(JSON.stringify(state.editedShifts));
-  // Overlay consultant shifts for days not already covered by shift roster
+
+  // Overlay consultant shifts (fills editedShifts from consultant parser output)
   const consultantAdded = overlayConsultantShifts(doctorName, targetMonth);
   if (consultantAdded > 0) {
-    // Merge into originalShifts so undo works correctly
     for (const [d, s] of Object.entries(state.editedShifts)) {
       if (!state.originalShifts[d]) state.originalShifts[d] = { ...s };
     }
@@ -3154,78 +3171,120 @@ function updateConsultantZoneVisibility() {
 }
 
 
-function setConsultantFile(file) {
-  state.consultantFile = file;
-  state.consultantData = null; // reset parsed data when new file selected
-  if (file) {
-    $('consultantBadge').style.display   = 'block';
-    $('consultantZone').style.display    = 'none';
-    $('consultantFileName').textContent  = file.name;
-    // Enable Extract Data even if no shift roster is loaded
+function renderConsultantList() {
+  const list = $('consultantBadgeList');
+  if (!list) return;
+  const files = state.consultantFiles || [];
+  if (!files.length) {
+    list.style.display = 'none';
+    return;
+  }
+  list.style.display = 'block';
+  list.innerHTML = files.map(f => `
+    <div class="roster-item" style="border-color:#5b9bd5;background:#e8f2fc;color:#2a5a8a;">
+      <span class="ri-name">&#128196; ${f.name}</span>
+      <button class="ri-remove" data-name="${f.name}" style="color:#5b9bd5;">&times;</button>
+    </div>`).join('');
+  list.querySelectorAll('.ri-remove').forEach(btn =>
+    btn.addEventListener('click', () => removeConsultantFile(btn.dataset.name))
+  );
+}
+
+function addConsultantFiles(files) {
+  if (!state.consultantFiles) state.consultantFiles = [];
+  for (const f of files) {
+    if (!state.consultantFiles.some(x => x.name === f.name)) state.consultantFiles.push(f);
+  }
+  state.consultantFile = state.consultantFiles[0] || null; // backward compat
+  state.consultantData = null;
+  renderConsultantList();
+  if (state.consultantFiles.length) {
     $('parseBtn').disabled = false;
     $('clearBtn').style.display = '';
-  } else {
-    $('consultantBadge').style.display   = 'none';
-    $('consultantZone').style.display    = 'block';
-    state.consultantFile = null;
-    // Re-check: only keep button enabled if shift roster files still present
-    if (!state.pendingFiles.length) {
-      $('parseBtn').disabled = true;
-      $('clearBtn').style.display = 'none';
-    }
   }
 }
 
-// Parse consultant PDF and assign months to days based on year detection
+function removeConsultantFile(name) {
+  state.consultantFiles = (state.consultantFiles || []).filter(f => f.name !== name);
+  state.consultantFile = state.consultantFiles[0] || null;
+  state.consultantData = null;
+  renderConsultantList();
+  if (!state.pendingFiles.length && !state.consultantFiles?.length) {
+    $('parseBtn').disabled = true;
+    $('clearBtn').style.display = 'none';
+  }
+}
+
+function setConsultantFile(file) {
+  // Legacy single-file reset (called from clear button)
+  state.consultantFiles = [];
+  state.consultantFile = null;
+  state.consultantData = null;
+  renderConsultantList();
+  if (!state.pendingFiles.length) {
+    if ($('parseBtn')) $('parseBtn').disabled = true;
+    if ($('clearBtn')) $('clearBtn').style.display = 'none';
+  }
+}
+
+// Parse one or more consultant PDFs and merge results
 async function parseAndStoreConsultantRoster() {
-  if (!state.consultantFile || !activeProfile) return;
-  try {
-    const buf = await readFile(state.consultantFile);
-    const result = await parseConsultantRosterPDF(buf, activeProfile);
+  const filesToParse = (state.consultantFiles && state.consultantFiles.length)
+    ? state.consultantFiles
+    : (state.consultantFile ? [state.consultantFile] : []);
+  if (!filesToParse.length || !activeProfile) return;
 
-    // Detect year from filename or current year
-    const fnYear = (state.consultantFile.name.match(/20(\d{2})/) || [])[0];
-    const year = fnYear ? parseInt(fnYear) : new Date().getFullYear();
+  const MONTHS_IDX = {january:0,february:1,march:2,april:3,may:4,june:5,
+    july:6,august:7,september:8,october:9,november:10,december:11};
 
-    // Detect month: take the dominant month from day count
-    // For consultant rosters the month is implicit — infer from day sequence
-    // (days 1-31 form one month; the PDF title or filename usually contains the month)
-    const monthMatch = state.consultantFile.name.match(
-      /January|February|March|April|May|June|July|August|September|October|November|December/i
-    );
-    const MONTHS_IDX = {january:0,february:1,march:2,april:3,may:4,june:5,
-      july:6,august:7,september:8,october:9,november:10,december:11};
-    const detectedMonth = monthMatch
-      ? MONTHS_IDX[monthMatch[0].toLowerCase()]
-      : new Date().getMonth();
+  const allDays = [], allDoctors = new Set();
+  let lastDetectedMonth = new Date().getMonth();
+  let lastDetectedYear  = new Date().getFullYear();
 
-    // Assign month to each day
-    for (const d of result.days) {
-      d.month = detectedMonth;
-      d.monthName = Object.keys(MONTHS_IDX).find(k => MONTHS_IDX[k] === detectedMonth) || '';
+  for (const cFile of filesToParse) {
+    try {
+      const buf = await readFile(cFile);
+      const result = await parseConsultantRosterPDF(buf, activeProfile);
+
+      const fnYearMatch = cFile.name.match(/20\d{2}/);
+      const year = fnYearMatch ? parseInt(fnYearMatch[0]) : new Date().getFullYear();
+      const monthMatch = cFile.name.match(
+        /January|February|March|April|May|June|July|August|September|October|November|December/i
+      );
+      const detectedMonth = monthMatch
+        ? MONTHS_IDX[monthMatch[0].toLowerCase()]
+        : new Date().getMonth();
+
+      for (const d of result.days) {
+        d.month = detectedMonth;
+        d.monthName = monthMatch ? monthMatch[0] : '';
+      }
+      allDays.push(...result.days);
+      result.doctors.forEach(d => allDoctors.add(d));
+      lastDetectedMonth = detectedMonth;
+      lastDetectedYear  = year;
+      console.log('[Consultant] Parsed', cFile.name, '—', result.days.length, 'days');
+    } catch(err) {
+      console.error('[Consultant] Parse error for', cFile.name, err);
     }
+  }
 
-    state.consultantData = result;
-    console.log('[Consultant] Parsed', result.days.length, 'days,', result.doctors.size, 'doctors');
+  state.consultantData = { days: allDays, doctors: allDoctors };
 
-    // Merge consultant doctors into the main roster doctors grid
-    if (state.rosterData) {
-      result.doctors.forEach(d => state.rosterData.doctors.add(d));
-      buildDoctorGrid(state.rosterData.doctors);
-    } else {
-      // No shift roster loaded — create a minimal rosterData from consultant data only
-      state.rosterData = { days: result.days, doctors: result.doctors };
-      state.availableMonths = new Set([detectedMonth]);
-      buildDoctorGrid(result.doctors);
-      $('monthSelect').value = detectedMonth;
-      $('yearInput').value = year;
-      step2.style.display = ''; unlock(step2);
-      rebuildMonthDropdown();
-      checkReady();
-    }
-  } catch(err) {
-    console.error('[Consultant] Parse error:', err);
-    alert('Could not parse consultant roster: ' + err.message);
+  // Merge into main rosterData
+  if (state.rosterData && state.parsedFiles.length) {
+    allDoctors.forEach(d => state.rosterData.doctors.add(d));
+    buildDoctorGrid(state.rosterData.doctors);
+  } else {
+    // Consultant-only — build rosterData from consultant data
+    state.rosterData = { days: allDays, doctors: allDoctors };
+    state.availableMonths = new Set(allDays.map(d => d.month));
+    buildDoctorGrid(allDoctors);
+    $('monthSelect').value = lastDetectedMonth;
+    $('yearInput').value = lastDetectedYear;
+    step2.style.display = ''; unlock(step2);
+    rebuildMonthDropdown();
+    checkReady();
   }
 }
 
@@ -3258,7 +3317,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const cFile = $('consultantFile');
   if (cFile) {
     cFile.addEventListener('change', e => {
-      if (e.target.files[0]) setConsultantFile(e.target.files[0]);
+      if (e.target.files.length) addConsultantFiles(Array.from(e.target.files));
       cFile.value = '';
     });
   }
@@ -3270,15 +3329,9 @@ document.addEventListener('DOMContentLoaded', () => {
     cZone.addEventListener('dragleave', () => cZone.classList.remove('drag-over'));
     cZone.addEventListener('drop', e => {
       e.preventDefault(); cZone.classList.remove('drag-over');
-      const f = e.dataTransfer.files[0];
-      if (f && f.name.endsWith('.pdf')) setConsultantFile(f);
+      const files = Array.from(e.dataTransfer.files).filter(f => f.name.endsWith('.pdf'));
+      if (files.length) addConsultantFiles(files);
     });
-  }
-
-  // Remove consultant file
-  const cRemove = $('consultantRemoveBtn');
-  if (cRemove) {
-    cRemove.addEventListener('click', () => setConsultantFile(null));
   }
 
   // Consultant parse is handled inside the main parseBtn click handler
