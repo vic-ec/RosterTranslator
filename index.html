@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v20260408-0829 -->
+<!-- v20260408-0940 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -299,10 +299,10 @@ header h1 { font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.92); }
       </div>
 
       <!-- Actions + inline status below both zones -->
-      <div style="margin-top:16px;" class="actions-row">
-        <button class="btn btn-primary" id="parseBtn" disabled style="min-width:220px;">Extract Data</button>
+      <div style="margin-top:16px;display:flex;justify-content:center;align-items:center;gap:12px;">
+        <button class="btn btn-primary" id="parseBtn" disabled style="width:50%;min-width:200px;max-width:400px;">Extract Data</button>
         <button class="btn btn-secondary" id="clearBtn" style="display:none;">Clear All</button>
-        <span id="parseStatus" style="font-family:var(--mono);font-size:11px;color:var(--text-muted);margin-left:8px;display:none;"></span>
+        <span id="parseStatus" style="font-family:var(--mono);font-size:11px;color:var(--text-muted);margin-left:4px;display:none;"></span>
       </div>
     </div>
   </div>
@@ -2312,6 +2312,14 @@ const CONSULTANT_ACTIVITY_TYPES=[
   'Leave - Paternity','Workshop','Course','Conference'
 ];
 
+// Consultant shift type → auto-fill times (6 fields: nf,nt,ot1f,ot1t,ot2f,ot2t)
+const CONSULTANT_SHIFT_TIMES = {
+  'Consultant Day - 07H30':         {nf:'07H30',nt:'15H30',ot1f:'15H30',ot1t:'16H30',ot2f:'',    ot2t:''},
+  'Consultant Call - Weekday':      {nf:'07H30',nt:'15H30',ot1f:'15H30',ot1t:'16H30',ot2f:'16H30',ot2t:'07H30'},
+  'Consultant Call - Weekend':      {nf:'',     nt:'',     ot1f:'07H30',ot1t:'11H30',ot2f:'11H30',ot2t:'07H30'},
+  'Consultant Call - Public Holiday':{nf:'',    nt:'',     ot1f:'07H30',ot1t:'11H30',ot2f:'11H30',ot2t:'07H30'},
+};
+
 // Shift type → auto-fill times
 const SHIFT_TIMES = {
   'WD Shift - 08H00': {nf:'08H00',nt:'16H00',of:'16H00',ot:'18H00'},
@@ -2747,7 +2755,10 @@ function buildPreview(doctorName,targetMonth,targetYear){
     Edit time fields or change activity type — changes save automatically. Click <strong>+</strong> to add an activity.
   </div>
   <div class="preview-wrapper"><table class="preview-table">
-  <thead><tr><th style="width:36px">Date</th><th style="width:70px">Day</th><th style="width:140px">Type</th><th style="width:70px">Normal From</th><th style="width:70px">Normal To</th><th style="width:70px">OT From</th><th style="width:70px">OT To</th><th style="width:76px;text-align:center">Actions</th></tr></thead><tbody>`;
+  ${isConsultantMode2
+    ? `<thead><tr><th style="width:36px">Date</th><th style="width:70px">Day</th><th style="width:150px">Type</th><th style="width:60px">Norm From</th><th style="width:60px">Norm To</th><th style="width:60px">OT1 From</th><th style="width:60px">OT1 To</th><th style="width:60px">OT2 From</th><th style="width:60px">OT2 To</th><th style="width:46px;text-align:center">Act</th></tr></thead>`
+    : `<thead><tr><th style="width:36px">Date</th><th style="width:70px">Day</th><th style="width:140px">Type</th><th style="width:70px">Normal From</th><th style="width:70px">Normal To</th><th style="width:70px">OT From</th><th style="width:70px">OT To</th><th style="width:76px;text-align:center">Actions</th></tr></thead>`
+  }<tbody>\`;
 
   for(let d=1;d<=daysInMonth;d++){
     const dateObj=new Date(targetYear,targetMonth,d);
@@ -2773,40 +2784,41 @@ function buildPreview(doctorName,targetMonth,targetYear){
     if(es){
       sc++;
       const rowClass=`shift-row${isWE?' we-row':(phName?' ph-wd-row':'')}`;
-      html+=`<tr data-day="${d}" class="${rowClass}">
-        ${dateCell}
-        ${dayCell}
-        <td><select class="type-select" data-day="${d}" data-is-special="${isSpecial?1:0}">${typeOptsFor(isSpecial,selectedType)}</select></td>
-        <td><input class="time-edit" data-day="${d}" data-field="nf" value="${es.nf||''}" maxlength="5" inputmode="numeric"></td>
-        <td><input class="time-edit" data-day="${d}" data-field="nt" value="${es.nt||''}" maxlength="5" inputmode="numeric"></td>
-        <td><input class="time-edit" data-day="${d}" data-field="of" value="${es.of||''}" placeholder="\u2014" maxlength="5" inputmode="numeric"></td>
-        <td><input class="time-edit" data-day="${d}" data-field="ot" value="${es.ot||''}" placeholder="\u2014" maxlength="5" inputmode="numeric"></td>
-        <td class="action-cell"><button class="row-clear" data-day="${d}" title="Remove">&times;</button></td>
-      </tr>`;
-      if(es.ot2f){
-        sc++;
-        html+=`<tr data-day="${d}_ot2" class="${rowClass}" style="background:#f5f0fa;">
-          <td style="color:var(--text-faint);font-size:10px;"></td>
-          <td style="color:#6b4fa0;font-size:10px;font-family:var(--mono);">\u2514 call</td>
-          <td style="font-size:11px;font-family:var(--mono);color:#6b4fa0;padding:3px 6px;">OT Off-site</td>
-          <td><input class="time-edit" data-day="${d}" data-field="ot2f" value="${es.ot2f||''}" maxlength="5" inputmode="numeric" style="color:#6b4fa0;"></td>
-          <td><input class="time-edit" data-day="${d}" data-field="ot2t" value="${es.ot2t||''}" maxlength="5" inputmode="numeric" style="color:#6b4fa0;"></td>
-          <td colspan="2" style="color:var(--text-faint);font-size:10px;font-family:var(--mono);padding:3px 6px;">overnight off-site</td>
-          <td class="action-cell"></td>
+      if(isConsultantMode2){
+        html+=`<tr data-day="${d}" class="${rowClass}">
+          ${dateCell}${dayCell}
+          <td><select class="type-select" data-day="${d}" data-is-special="${isSpecial?1:0}">${typeOptsFor(isSpecial,selectedType)}</select></td>
+          <td><input class="time-edit" data-day="${d}" data-field="nf"   value="${es.nf||''}"   placeholder="—" maxlength="5" inputmode="numeric"></td>
+          <td><input class="time-edit" data-day="${d}" data-field="nt"   value="${es.nt||''}"   placeholder="—" maxlength="5" inputmode="numeric"></td>
+          <td><input class="time-edit" data-day="${d}" data-field="ot1f" value="${es.ot1f||''}" placeholder="—" maxlength="5" inputmode="numeric" style="color:#2a5a8a;"></td>
+          <td><input class="time-edit" data-day="${d}" data-field="ot1t" value="${es.ot1t||''}" placeholder="—" maxlength="5" inputmode="numeric" style="color:#2a5a8a;"></td>
+          <td><input class="time-edit" data-day="${d}" data-field="ot2f" value="${es.ot2f||''}" placeholder="—" maxlength="5" inputmode="numeric" style="color:#6b4fa0;"></td>
+          <td><input class="time-edit" data-day="${d}" data-field="ot2t" value="${es.ot2t||''}" placeholder="—" maxlength="5" inputmode="numeric" style="color:#6b4fa0;"></td>
+          <td class="action-cell"><button class="row-clear" data-day="${d}" title="Remove">&times;</button></td>
+        </tr>`;
+      } else {
+        html+=`<tr data-day="${d}" class="${rowClass}">
+          ${dateCell}${dayCell}
+          <td><select class="type-select" data-day="${d}" data-is-special="${isSpecial?1:0}">${typeOptsFor(isSpecial,selectedType)}</select></td>
+          <td><input class="time-edit" data-day="${d}" data-field="nf" value="${es.nf||''}" maxlength="5" inputmode="numeric"></td>
+          <td><input class="time-edit" data-day="${d}" data-field="nt" value="${es.nt||''}" maxlength="5" inputmode="numeric"></td>
+          <td><input class="time-edit" data-day="${d}" data-field="of" value="${es.of||''}" placeholder="—" maxlength="5" inputmode="numeric"></td>
+          <td><input class="time-edit" data-day="${d}" data-field="ot" value="${es.ot||''}" placeholder="—" maxlength="5" inputmode="numeric"></td>
+          <td class="action-cell"><button class="row-clear" data-day="${d}" title="Remove">&times;</button></td>
         </tr>`;
       }
     } else if(phName){
       html+=`<tr data-day="${d}" class="ph-row${isWE?' we-row':' ph-wd-row'}">
         ${dateCell}
         ${dayCell}
-        <td colspan="5" style="font-style:italic;color:#7A3B1E">${phName}</td>
+        <td colspan="${isConsultantMode2?7:5}" style="font-style:italic;color:#7A3B1E">${phName}</td>
         <td class="action-cell"><button class="row-add" title="Add shift" data-day="${d}" data-is-we="1" data-is-special="1">+</button></td>
       </tr>`;
     } else {
       html+=`<tr data-day="${d}" class="empty-row${isWE?' we-row':''}">
         <td>${d}</td>
         <td class="${isWE?'we-label':''}">${dayName}</td>
-        <td colspan="5"></td>
+        <td colspan="${isConsultantMode2?7:5}"></td>
         <td class="action-cell"><button class="row-add" title="Add shift" data-day="${d}" data-is-we="${isWE?1:0}" data-is-special="${isSpecial?1:0}">+</button></td>
       </tr>`;
     }
@@ -2865,22 +2877,28 @@ function attachEditHandlers(){
       if(!state.editedShifts[d]) state.editedShifts[d]={nf:'',nt:'',of:null,ot:null,label:'Custom',typeLabel:'WD Shift - 08H00',isWE:false};
       state.editedShifts[d].typeLabel=sel.value;
       const row=document.querySelector(`tr[data-day="${d}"]`);
-      if(SHIFT_TIMES[sel.value]){
-        // Auto-fill times for shift types
-        const times=SHIFT_TIMES[sel.value];
-        state.editedShifts[d].nf=times.nf; state.editedShifts[d].nt=times.nt;
-        state.editedShifts[d].of=times.of; state.editedShifts[d].ot=times.ot;
+      const cTimes=CONSULTANT_SHIFT_TIMES[sel.value];
+      const sTimes=SHIFT_TIMES[sel.value];
+      if(cTimes){
+        // Consultant type auto-fill (6 fields)
+        const isC=activeProfile&&activeProfile.roster_type==='consultant';
+        Object.assign(state.editedShifts[d],{nf:cTimes.nf,nt:cTimes.nt,ot1f:cTimes.ot1f,ot1t:cTimes.ot1t,ot2f:cTimes.ot2f,ot2t:cTimes.ot2t});
+        if(row){
+          const fields=['nf','nt','ot1f','ot1t','ot2f','ot2t'];
+          row.querySelectorAll('.time-edit').forEach((inp,i)=>{if(fields[i])inp.value=cTimes[fields[i]]||'';inp.style.borderColor='';});
+        }
+      } else if(sTimes){
+        // Standard shift roster auto-fill
+        state.editedShifts[d].nf=sTimes.nf; state.editedShifts[d].nt=sTimes.nt;
+        state.editedShifts[d].of=sTimes.of; state.editedShifts[d].ot=sTimes.ot;
         if(row){
           const fields=['nf','nt','of','ot'];
-          row.querySelectorAll('.time-edit').forEach((inp,i)=>{inp.value=times[fields[i]]||'';inp.style.borderColor='';});
+          row.querySelectorAll('.time-edit').forEach((inp,i)=>{inp.value=sTimes[fields[i]]||'';inp.style.borderColor='';});
         }
       } else {
-        // Non-shift activity: set times to 00H00
-        state.editedShifts[d].nf='00H00'; state.editedShifts[d].nt='00H00';
-        state.editedShifts[d].of='00H00'; state.editedShifts[d].ot='00H00';
-        if(row){
-          row.querySelectorAll('.time-edit').forEach(inp=>{inp.value='00H00';inp.style.borderColor='';});
-        }
+        // Non-shift activity (leave/workshop etc): clear all time fields
+        ['nf','nt','of','ot','ot1f','ot1t','ot2f','ot2t'].forEach(k=>state.editedShifts[d][k]='');
+        if(row) row.querySelectorAll('.time-edit').forEach(inp=>{inp.value='';inp.style.borderColor='';});
       }
       markDirty(d);
       updateLeaveFields();
