@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v20260408-1201 -->
+<!-- v20260408-1245 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -186,7 +186,12 @@ header h1 { font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.92); }
 .upload-zones-row { display:flex; gap:16px; align-items:flex-start; margin-top:16px; }
 .upload-zone-col { flex:1; min-width:0; display:flex; flex-direction:column; gap:0; padding-top:0; }
 .upload-zone-label { font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:8px; display:block; padding-top:2px; }
-@media(max-width:600px){ .upload-zones-row { flex-direction:column; } }
+/* Mobile: stack vertically, full width */
+@media(max-width:640px){
+  .upload-zones-row { flex-direction:column; }
+  .upload-zone-col { width:100%; }
+  #consultantZoneWrap.upload-zone-col { width:100% !important; }
+}
 
 /* ── UPLOAD ZONE COLOURS ──────────────────────────────────── */
 /* Shift roster: light green */
@@ -198,7 +203,7 @@ header h1 { font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.92); }
 .upload-zone-consultant .upload-icon { filter: hue-rotate(180deg); }
 .upload-zone-consultant .upload-label { color: #2a5a8a; }
 .upload-zone-consultant .upload-hint  { color: #5b9bd5; }
-#consultantZoneWrap { display:none; }
+#consultantZoneWrap { display:none; flex:1; min-width:0; }
 
 /* ── STEP 0 — EC SELECTOR ─────────────────────────────────── */
 #step0 { border: 2px solid var(--accent); }
@@ -299,10 +304,10 @@ header h1 { font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.92); }
       </div>
 
       <!-- Actions + inline status below both zones -->
-      <div style="margin-top:16px;display:flex;justify-content:center;align-items:center;gap:12px;">
-        <button class="btn btn-primary" id="parseBtn" disabled style="width:50%;min-width:200px;max-width:400px;">Extract Data</button>
+      <div style="margin-top:16px;display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:10px;">
+        <button class="btn btn-primary" id="parseBtn" disabled style="width:50%;min-width:180px;max-width:400px;">Extract Data</button>
         <button class="btn btn-secondary" id="clearBtn" style="display:none;">Clear All</button>
-        <span id="parseStatus" style="font-family:var(--mono);font-size:11px;color:var(--text-muted);margin-left:4px;display:none;"></span>
+        <span id="parseStatus" style="font-family:var(--mono);font-size:11px;color:var(--text-muted);display:none;width:100%;text-align:center;"></span>
       </div>
     </div>
   </div>
@@ -2737,6 +2742,7 @@ function buildPreview(doctorName,targetMonth,targetYear){
   const phFootnotes=[];
   state.phLetterMap={};
   const letters='abcdefghijklmnopqrstuvwxyz';
+  const isConsultantMode2 = activeProfile && activeProfile.roster_type === 'consultant' && state.consultantData;
   const cColspan=isConsultantMode2?7:5;
   for(let d=1;d<=daysInMonth;d++){
     const dateObj2=new Date(targetYear,targetMonth,d);
@@ -2748,7 +2754,6 @@ function buildPreview(doctorName,targetMonth,targetYear){
       phFootnotes.push({letter,name:ph2});
     }
   }
-  const isConsultantMode2 = activeProfile && activeProfile.roster_type === 'consultant' && state.consultantData;
   const activeTypes = isConsultantMode2 ? CONSULTANT_ACTIVITY_TYPES : ACTIVITY_TYPES;
   const typeOpts=activeTypes.map(t=>`<option value="${t}">${t}</option>`).join('');
   let html=`
