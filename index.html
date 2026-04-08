@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v20260408-0940 -->
+<!-- v20260408-1148 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -2737,6 +2737,7 @@ function buildPreview(doctorName,targetMonth,targetYear){
   const phFootnotes=[];
   state.phLetterMap={};
   const letters='abcdefghijklmnopqrstuvwxyz';
+  const cColspan=isConsultantMode2?7:5;
   for(let d=1;d<=daysInMonth;d++){
     const dateObj2=new Date(targetYear,targetMonth,d);
     const ph2=holidays.get(dateKeyLocal(dateObj2));
@@ -2756,8 +2757,8 @@ function buildPreview(doctorName,targetMonth,targetYear){
   </div>
   <div class="preview-wrapper"><table class="preview-table">
   ${isConsultantMode2
-    ? `<thead><tr><th style="width:36px">Date</th><th style="width:70px">Day</th><th style="width:150px">Type</th><th style="width:60px">Norm From</th><th style="width:60px">Norm To</th><th style="width:60px">OT1 From</th><th style="width:60px">OT1 To</th><th style="width:60px">OT2 From</th><th style="width:60px">OT2 To</th><th style="width:46px;text-align:center">Act</th></tr></thead>`
-    : `<thead><tr><th style="width:36px">Date</th><th style="width:70px">Day</th><th style="width:140px">Type</th><th style="width:70px">Normal From</th><th style="width:70px">Normal To</th><th style="width:70px">OT From</th><th style="width:70px">OT To</th><th style="width:76px;text-align:center">Actions</th></tr></thead>`
+    ? '<thead><tr><th style="width:36px">Date</th><th style="width:70px">Day</th><th style="width:150px">Type</th><th style="width:60px">Norm From</th><th style="width:60px">Norm To</th><th style="width:60px">OT1 From</th><th style="width:60px">OT1 To</th><th style="width:60px">OT2 From</th><th style="width:60px">OT2 To</th><th style="width:46px;text-align:center">Act</th></tr></thead>'
+    : '<thead><tr><th style="width:36px">Date</th><th style="width:70px">Day</th><th style="width:140px">Type</th><th style="width:70px">Normal From</th><th style="width:70px">Normal To</th><th style="width:70px">OT From</th><th style="width:70px">OT To</th><th style="width:76px;text-align:center">Actions</th></tr></thead>'
   }<tbody>\`;
 
   for(let d=1;d<=daysInMonth;d++){
@@ -2811,14 +2812,14 @@ function buildPreview(doctorName,targetMonth,targetYear){
       html+=`<tr data-day="${d}" class="ph-row${isWE?' we-row':' ph-wd-row'}">
         ${dateCell}
         ${dayCell}
-        <td colspan="${isConsultantMode2?7:5}" style="font-style:italic;color:#7A3B1E">${phName}</td>
+        <td colspan="${cColspan}" style="font-style:italic;color:#7A3B1E">${phName}</td>
         <td class="action-cell"><button class="row-add" title="Add shift" data-day="${d}" data-is-we="1" data-is-special="1">+</button></td>
       </tr>`;
     } else {
       html+=`<tr data-day="${d}" class="empty-row${isWE?' we-row':''}">
         <td>${d}</td>
         <td class="${isWE?'we-label':''}">${dayName}</td>
-        <td colspan="${isConsultantMode2?7:5}"></td>
+        <td colspan="${cColspan}"></td>
         <td class="action-cell"><button class="row-add" title="Add shift" data-day="${d}" data-is-we="${isWE?1:0}" data-is-special="${isSpecial?1:0}">+</button></td>
       </tr>`;
     }
