@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v20260408-1213 -->
+<!-- v20260409-0637 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -186,7 +186,12 @@ header h1 { font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.92); }
 .upload-zones-row { display:flex; gap:16px; align-items:flex-start; margin-top:16px; }
 .upload-zone-col { flex:1; min-width:0; display:flex; flex-direction:column; gap:0; padding-top:0; }
 .upload-zone-label { font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:8px; display:block; padding-top:2px; }
-@media(max-width:600px){ .upload-zones-row { flex-direction:column; } }
+/* Mobile: stack vertically, full width */
+@media(max-width:640px){
+  .upload-zones-row { flex-direction:column; }
+  .upload-zone-col { width:100%; }
+  #consultantZoneWrap.upload-zone-col { width:100% !important; }
+}
 
 /* ── UPLOAD ZONE COLOURS ──────────────────────────────────── */
 /* Shift roster: light green */
@@ -198,7 +203,7 @@ header h1 { font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.92); }
 .upload-zone-consultant .upload-icon { filter: hue-rotate(180deg); }
 .upload-zone-consultant .upload-label { color: #2a5a8a; }
 .upload-zone-consultant .upload-hint  { color: #5b9bd5; }
-#consultantZoneWrap { display:none; }
+#consultantZoneWrap { display:none; flex:1; min-width:0; }
 
 /* ── STEP 0 — EC SELECTOR ─────────────────────────────────── */
 #step0 { border: 2px solid var(--accent); }
@@ -299,10 +304,10 @@ header h1 { font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.92); }
       </div>
 
       <!-- Actions + inline status below both zones -->
-      <div style="margin-top:16px;display:flex;justify-content:center;align-items:center;gap:12px;">
-        <button class="btn btn-primary" id="parseBtn" disabled style="width:50%;min-width:200px;max-width:400px;">Extract Data</button>
+      <div style="margin-top:16px;display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:10px;">
+        <button class="btn btn-primary" id="parseBtn" disabled style="width:50%;min-width:180px;max-width:400px;">Extract Data</button>
         <button class="btn btn-secondary" id="clearBtn" style="display:none;">Clear All</button>
-        <span id="parseStatus" style="font-family:var(--mono);font-size:11px;color:var(--text-muted);margin-left:4px;display:none;"></span>
+        <span id="parseStatus" style="font-family:var(--mono);font-size:11px;color:var(--text-muted);display:none;width:100%;text-align:center;"></span>
       </div>
     </div>
   </div>
@@ -1497,10 +1502,10 @@ const annexureDoc = new Document({sections:[{properties:{
     rows:[
       leaveHdrRow(),
       leaveDataRow('Vacation leave',lc.vacation||0,0),
-      leaveDataRow('Sick leave',lc.sick||0,lc.sick||0),
-      leaveDataRow('Family responsibility leave',lc.family||0,lc.family||0),
-      leaveDataRow('Special leave for study purposes (Prep & exams only)',lc.study||0,lc.study||0),
-      leaveDataRow('Pre-natal leave',lc.prenatal||0,lc.prenatal||0,true),
+      leaveDataRow('Sick leave',lc.sick||0,0),
+      leaveDataRow('Family responsibility leave',lc.family||0,0),
+      leaveDataRow('Special leave for study purposes (Prep & exams only)',lc.study||0,0),
+      leaveDataRow('Pre-natal leave',lc.prenatal||0,0,true),
     ]
   }),
 
@@ -1690,9 +1695,9 @@ async function generateZ1ADocx(d) {
   const LEAVE_LABELS_Z1 = {
     'Leave - Annual': 'Annual Leave',
     'Leave - Sick': 'Normal Sick Leave (Provide supporting evidence when applicable)',
-    'Leave - Family Responsibility': 'Family Responsibility Leave',
+    'Leave - Family Responsibility': 'Family Responsibility Leave (Provide supporting evidence)',
     'Leave - Study': 'Special Leave for study purposes (Prep &amp; exams only)',
-    'Leave - Prenatal': 'Pre-natal Leave',
+    'Leave - Prenatal': 'Pre-natal Leave (Provide supporting evidence)',
     'Leave - Paternity': 'Paternity Leave (Provide supporting evidence)',
     'Leave - Special': 'Special Leave ((Provide supporting evidence)',
     'Leave - Maternity': 'Maternity Leave (Provide supporting evidence))',
@@ -2241,8 +2246,30 @@ async function generateExcel(monthIdx, year, details) {
     const phName = phMap ? phMap.get(dk) : null;
     const isSpecial = isWE || !!phName;
     const isShift = es.typeLabel && (es.typeLabel.startsWith('WD Shift') || es.typeLabel.startsWith('WE Shift'));
+    const isConsultantType = es.typeLabel && (
+      es.typeLabel.startsWith('Consultant Day') || es.typeLabel.startsWith('Consultant Call')
+    );
 
-    if(isShift) {
+    if(isConsultantType) {
+      // Consultant mode: 6 time columns
+      // C = Normal From, D = Normal To
+      // E = 1st On Call From (ot1f), F = 1st On Call To (ot1t)
+      // G = 2nd On Call From (ot2f), H = 2nd On Call To (ot2t)
+      // Use stored times; fall back to CONSULTANT_SHIFT_TIMES defaults
+      const cTimes = CONSULTANT_SHIFT_TIMES[es.typeLabel] || {};
+      const nf  = es.nf  !== undefined ? es.nf  : (cTimes.nf  || '');
+      const nt  = es.nt  !== undefined ? es.nt  : (cTimes.nt  || '');
+      const ot1f = es.ot1f !== undefined ? es.ot1f : (cTimes.ot1f || '');
+      const ot1t = es.ot1t !== undefined ? es.ot1t : (cTimes.ot1t || '');
+      const ot2f = es.ot2f !== undefined ? es.ot2f : (cTimes.ot2f || '');
+      const ot2t = es.ot2t !== undefined ? es.ot2t : (cTimes.ot2t || '');
+      if(nf)   xml = patchCellKeepStyle(xml, `C${row}`, nf);
+      if(nt)   xml = patchCellKeepStyle(xml, `D${row}`, nt);
+      if(ot1f) xml = patchCellKeepStyle(xml, `E${row}`, ot1f);
+      if(ot1t) xml = patchCellKeepStyle(xml, `F${row}`, ot1t);
+      if(ot2f) xml = patchCellKeepStyle(xml, `G${row}`, ot2f);
+      if(ot2t) xml = patchCellKeepStyle(xml, `H${row}`, ot2t);
+    } else if(isShift) {
       const hasNormalTimes = es.nf && es.nf !== '00H00' && es.nt && es.nt !== '00H00';
       const hasOTTimes = es.of && es.of !== '00H00' && es.ot && es.ot !== '00H00';
       if(hasNormalTimes) {
@@ -2264,15 +2291,8 @@ async function generateExcel(monthIdx, year, details) {
         'Course':'Course','Conference':'Conference / Symposium',
       };
       const leaveDisplayLabel = LEAVE_LABEL_MAP[es.typeLabel] || es.typeLabel;
-      const wrapStyleIdx = isSpecial ? '36' : '35';
-      xml = replaceCell(xml, 'C'+row, '<c r="C'+row+'" s="'+wrapStyleIdx+'" t="inlineStr"><is><r><rPr><b/></rPr><t>'+escXml(leaveDisplayLabel)+'</t></r></is></c>');
-      xml = replaceCell(xml, 'D'+row, '<c r="D'+row+'" s="'+wrapStyleIdx+'"/>');
-      // Merge C:D
-      const mcMatch = xml.match(/<mergeCells count="(\d+)"/);
-      if(mcMatch) {
-        xml = xml.replace('<mergeCells count="'+mcMatch[1]+'"', '<mergeCells count="'+(parseInt(mcMatch[1])+1)+'"');
-      }
-      xml = xml.replace('</mergeCells>', '<mergeCell ref="C'+row+':D'+row+'"/></mergeCells>');
+      // Write label left-aligned in C only — no wrap, no C:D merge
+      xml = patchCellKeepStyle(xml, 'C'+row, leaveDisplayLabel);
     }
   }
 
