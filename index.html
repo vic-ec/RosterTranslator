@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v20260409-0623 -->
+<!-- v20260409-0637 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -1502,10 +1502,10 @@ const annexureDoc = new Document({sections:[{properties:{
     rows:[
       leaveHdrRow(),
       leaveDataRow('Vacation leave',lc.vacation||0,0),
-      leaveDataRow('Sick leave',lc.sick||0,lc.sick||0),
-      leaveDataRow('Family responsibility leave',lc.family||0,lc.family||0),
-      leaveDataRow('Special leave for study purposes (Prep & exams only)',lc.study||0,lc.study||0),
-      leaveDataRow('Pre-natal leave',lc.prenatal||0,lc.prenatal||0,true),
+      leaveDataRow('Sick leave',lc.sick||0,0),
+      leaveDataRow('Family responsibility leave',lc.family||0,0),
+      leaveDataRow('Special leave for study purposes (Prep & exams only)',lc.study||0,0),
+      leaveDataRow('Pre-natal leave',lc.prenatal||0,0,true),
     ]
   }),
 
@@ -1695,9 +1695,9 @@ async function generateZ1ADocx(d) {
   const LEAVE_LABELS_Z1 = {
     'Leave - Annual': 'Annual Leave',
     'Leave - Sick': 'Normal Sick Leave (Provide supporting evidence when applicable)',
-    'Leave - Family Responsibility': 'Family Responsibility Leave',
+    'Leave - Family Responsibility': 'Family Responsibility Leave (Provide supporting evidence)',
     'Leave - Study': 'Special Leave for study purposes (Prep &amp; exams only)',
-    'Leave - Prenatal': 'Pre-natal Leave',
+    'Leave - Prenatal': 'Pre-natal Leave (Provide supporting evidence)',
     'Leave - Paternity': 'Paternity Leave (Provide supporting evidence)',
     'Leave - Special': 'Special Leave ((Provide supporting evidence)',
     'Leave - Maternity': 'Maternity Leave (Provide supporting evidence))',
@@ -2291,15 +2291,8 @@ async function generateExcel(monthIdx, year, details) {
         'Course':'Course','Conference':'Conference / Symposium',
       };
       const leaveDisplayLabel = LEAVE_LABEL_MAP[es.typeLabel] || es.typeLabel;
-      const wrapStyleIdx = isSpecial ? '36' : '35';
-      xml = replaceCell(xml, 'C'+row, '<c r="C'+row+'" s="'+wrapStyleIdx+'" t="inlineStr"><is><r><rPr><b/></rPr><t>'+escXml(leaveDisplayLabel)+'</t></r></is></c>');
-      xml = replaceCell(xml, 'D'+row, '<c r="D'+row+'" s="'+wrapStyleIdx+'"/>');
-      // Merge C:D
-      const mcMatch = xml.match(/<mergeCells count="(\d+)"/);
-      if(mcMatch) {
-        xml = xml.replace('<mergeCells count="'+mcMatch[1]+'"', '<mergeCells count="'+(parseInt(mcMatch[1])+1)+'"');
-      }
-      xml = xml.replace('</mergeCells>', '<mergeCell ref="C'+row+':D'+row+'"/></mergeCells>');
+      // Write label left-aligned in C only — no wrap, no C:D merge
+      xml = patchCellKeepStyle(xml, 'C'+row, leaveDisplayLabel);
     }
   }
 
