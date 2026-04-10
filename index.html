@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- v20260409-1218 -->
+<!-- v20260410-1835 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EC Duty Roster Translator</title>
+<title>EC Roster Translator</title>
 <script src="js/pdf.min.js"></script>
 <script src="js/xlsx.full.min.js"></script>
 <script src="js/jszip.min.js"></script>
@@ -89,8 +89,8 @@ header h1 { font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.92); }
 .btn-primary:hover:not(:disabled) { background: #243d30; }
 .btn-secondary { background: var(--surface); color: var(--text); border: 1px solid var(--border-strong); }
 .btn-secondary:hover:not(:disabled) { background: var(--bg); }
-.btn-clear { background: none; color: var(--text-faint); border: 1px solid var(--border-strong); box-sizing:border-box; }
-.btn-clear:hover:not(:disabled) { color: var(--warn); border-color: var(--warn); background: var(--warn-light); }
+.btn-clear { background: none; color: var(--text-faint); border: none; font-size:11px; font-weight:400; padding:6px 10px; box-sizing:border-box; }
+.btn-clear:hover:not(:disabled) { color: var(--warn); background: none; }
 .btn-success { background: var(--accent); color: #fff; }
 .downloads-row .btn { justify-content:center; width:100%; max-width:340px; box-sizing:border-box; }
 .btn-success:hover:not(:disabled) { background: var(--accent-mid); }
@@ -103,7 +103,7 @@ header h1 { font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.92); }
 
 /* DOCTOR CHIPS */
 .doctor-grid { display: flex; flex-wrap: wrap; gap: 8px; }
-.doctor-chip { font-family: var(--mono); font-size: 11px; padding: 4px 10px; border-radius: 20px; border: 1px solid var(--border-strong); background: var(--bg); color: var(--text-muted); cursor: pointer; transition: all 0.12s; user-select: none; }
+.doctor-chip { font-family: var(--sans); font-size: 12px; padding: 4px 10px; border-radius: 20px; border: 1px solid var(--border-strong); background: var(--bg); color: var(--text-muted); cursor: pointer; transition: all 0.12s; user-select: none; }
 .doctor-chip:hover { border-color: var(--accent-mid); color: var(--accent-mid); }
 .doctor-chip.selected { background: var(--accent); border-color: var(--accent); color: #fff; }
 
@@ -145,8 +145,8 @@ header h1 { font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.92); }
 .step2-controls .field-year { width:80px; flex-shrink:0; }
 .step2-controls .field-preview { flex:1; }
 .step2-controls .btn-preview { width:100%; height:37px; }
-.clear-doctor-btn { display:none; margin-left:10px; font-family:var(--sans); font-size:13px; font-weight:500; padding:9px 18px; background:none; border:1px solid var(--border-strong); border-radius:var(--radius); cursor:pointer; color:var(--text-faint); white-space:nowrap; box-sizing:border-box; }
-.clear-doctor-btn:hover { color:var(--warn); border-color:var(--warn); background:var(--warn-light); }
+.clear-doctor-btn { display:none; margin-left:10px; font-family:var(--sans); font-size:11px; font-weight:400; padding:4px 8px; background:none; border:none; border-radius:var(--radius); cursor:pointer; color:var(--text-faint); white-space:nowrap; box-sizing:border-box; }
+.clear-doctor-btn:hover { color:var(--warn); background:none; }
 .preview-table { table-layout: fixed; width: 100%; border-collapse: collapse; font-size: 12px; font-family: var(--mono); }
 .preview-table th { background: var(--accent); color: rgba(255,255,255,0.85); padding: 6px 8px; text-align: left; font-weight: 500; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap; overflow: hidden; }
 .preview-table td { padding: 4px 6px; border-bottom: 1px solid var(--border); white-space: nowrap; color: var(--text-muted); overflow: hidden; }
@@ -195,6 +195,9 @@ header h1 { font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.92); }
 /* Shift roster: light green */
 #rosterZone { background: #eef5f0 !important; border-color: #b8d4c0 !important; }
 #rosterZone:hover { background: #ddeee3 !important; border-color: #2d6b45 !important; }
+#rosterZone .upload-label { color: var(--accent-mid) !important; }
+#rosterZone .upload-hint  { color: var(--accent-mid) !important; opacity:0.75; }
+#rosterZone .upload-icon  { filter: none; }
 /* Consultant roster: light blue */
 .upload-zone-consultant { border-color: #5b9bd5 !important; background: #eef4fb !important; }
 .upload-zone-consultant:hover { background: #d9eaf7 !important; border-color: #2a5a8a !important; }
@@ -218,13 +221,47 @@ header h1 { font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.92); }
 .ec-loading { color:var(--text-faint); font-size:12px; font-family:var(--mono); display:flex; align-items:center; gap:8px; }
 .ec-loading .spinner-dark { width:12px; height:12px; border:2px solid var(--border-strong); border-top-color:var(--accent); border-radius:50%; animation:spin 0.6s linear infinite; flex-shrink:0; }
 
+
+/* ── WIZARD MODAL ─────────────────────────────────────────────── */
+.wiz-step-tab { flex:1; padding:9px 4px; text-align:center; font-family:var(--mono); font-size:10px; font-weight:500; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-faint); cursor:default; border-bottom:2px solid transparent; transition:color 0.12s; white-space:nowrap; overflow:hidden; }
+.wiz-step-tab.active { color:var(--accent); border-bottom-color:var(--accent-mid); }
+.wiz-step-tab.done { color:var(--success); }
+.wiz-body { padding:24px; }
+.wiz-intro { font-size:13px; color:var(--text-muted); margin:0 0 18px; line-height:1.6; }
+.wiz-field { margin-bottom:16px; }
+.wiz-label { font-family:var(--sans); font-size:12px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em; display:block; margin-bottom:6px; }
+.wiz-input { font-family:var(--sans); font-size:13px; padding:9px 10px; border:1px solid var(--border-strong); border-radius:var(--radius); background:var(--surface); color:var(--text); width:100%; box-sizing:border-box; outline:none; transition:border-color 0.15s; }
+.wiz-input:focus { border-color:var(--accent-mid); }
+.wiz-hint { font-size:11px; color:var(--text-faint); font-family:var(--mono); margin-top:5px; }
+.wiz-radio-lbl { font-family:var(--sans); font-size:13px; cursor:pointer; display:flex; align-items:center; gap:6px; }
+.wiz-section-title { font-family:var(--sans); font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted); margin-bottom:6px; }
+.wiz-col-chip { font-family:var(--mono); font-size:10px; padding:3px 8px; border-radius:3px; font-weight:600; }
+.wiz-rules-table { width:100%; border-collapse:collapse; font-size:11px; font-family:var(--mono); }
+.wiz-rules-table th { background:var(--accent); color:rgba(255,255,255,0.85); padding:5px 7px; text-align:left; font-weight:500; font-size:10px; letter-spacing:0.04em; }
+.wiz-rules-table td { padding:4px 5px; border-bottom:1px solid var(--border); vertical-align:middle; }
+.wiz-rules-table tr:last-child td { border-bottom:none; }
+.wiz-rules-table td:first-child { color:var(--text-muted); white-space:nowrap; padding-right:10px; }
+.wiz-time { font-family:var(--mono); font-size:11px; width:64px; padding:3px 5px; border:1px solid var(--border-strong); border-radius:3px; text-align:center; background:var(--surface); color:var(--accent-mid); box-sizing:border-box; }
+.wiz-time:focus { outline:none; border-color:var(--accent-mid); background:var(--accent-light); }
+
 </style>
 </head>
 <body>
 <header>
-  <span class="logo">WCG EC</span>
-  <div class="divider"></div>
-  <h1 id="headerTitle">Duty Roster Translator</h1>
+  <svg width="28" height="30" viewBox="0 0 28 30" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;opacity:0.9;">
+    <!-- clipboard body -->
+    <rect x="4" y="5" width="16" height="22" rx="2" stroke="white" stroke-width="1.7" fill="none"/>
+    <!-- clipboard top clip -->
+    <rect x="9" y="3" width="6" height="4" rx="1.5" stroke="white" stroke-width="1.5" fill="none"/>
+    <!-- text lines on clipboard -->
+    <line x1="7.5" y1="12" x2="15.5" y2="12" stroke="white" stroke-width="1.4" stroke-linecap="round"/>
+    <line x1="7.5" y1="15.5" x2="15.5" y2="15.5" stroke="white" stroke-width="1.4" stroke-linecap="round"/>
+    <line x1="7.5" y1="19" x2="13" y2="19" stroke="white" stroke-width="1.4" stroke-linecap="round"/>
+    <!-- right-pointing arrow overlaid bottom-right -->
+    <line x1="16" y1="23" x2="26" y2="23" stroke="white" stroke-width="2.2" stroke-linecap="round"/>
+    <polyline points="21.5,18.5 26,23 21.5,27.5" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </svg>
+  <h1 id="headerTitle">EC Roster Translator</h1>
 </header>
 <div class="app">
 
@@ -318,7 +355,7 @@ header h1 { font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.92); }
     <div class="card-body">
       <div style="margin-bottom:16px;">
         <div style="display:flex;align-items:center;margin-bottom:8px;">
-          <span class="upload-label">Detected Staff</span>
+          <span style="font-family:var(--sans);font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;">Detected Staff</span>
           <button class="clear-doctor-btn" id="clearDoctorBtn">&#10005; Clear selection</button>
         </div>
         <div class="doctor-grid" id="doctorGrid"><div class="empty">No roster parsed yet</div></div>
@@ -430,7 +467,123 @@ header h1 { font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.92); }
         <button class="btn-outline" id="z1aBtn" style="display:none;">&#8595; Download Z1(a) Leave Form</button>
       </div>
     </div>
+  
+<!-- ═══════════════════════════════════════════════════════════════════
+     EC PROFILE SETUP WIZARD MODAL
+     ═══════════════════════════════════════════════════════════════ -->
+<div id="wizardOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:1000;overflow-y:auto;padding:24px 16px;">
+  <div id="wizardModal" style="background:var(--surface);border-radius:10px;max-width:780px;margin:0 auto;box-shadow:0 8px 40px rgba(0,0,0,0.25);overflow:hidden;">
+
+    <!-- Wizard header -->
+    <div style="background:var(--accent);color:#fff;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;">
+      <div>
+        <div style="font-family:var(--sans);font-size:15px;font-weight:600;">Set Up a New EC Profile</div>
+        <div id="wizStepLabel" style="font-family:var(--mono);font-size:11px;opacity:0.7;margin-top:2px;">Step 1 of 4</div>
+      </div>
+      <button id="wizCloseBtn" style="background:none;border:none;color:rgba(255,255,255,0.7);font-size:22px;cursor:pointer;line-height:1;padding:0 4px;">&times;</button>
+    </div>
+
+    <!-- Step indicator bar -->
+    <div style="display:flex;background:#f0f0ec;border-bottom:1px solid var(--border);">
+      <div class="wiz-step-tab" id="wizTab1" data-step="1">1 &nbsp;EC Details</div>
+      <div class="wiz-step-tab" id="wizTab2" data-step="2">2 &nbsp;Upload PDF</div>
+      <div class="wiz-step-tab" id="wizTab3" data-step="3">3 &nbsp;Columns &amp; Rules</div>
+      <div class="wiz-step-tab" id="wizTab4" data-step="4">4 &nbsp;Review &amp; Submit</div>
+    </div>
+
+    <!-- ── STEP 1: EC Details ──────────────────────────────────── -->
+    <div id="wizStep1" class="wiz-body">
+      <p class="wiz-intro">Enter the details for your Emergency Centre. Once submitted, an administrator will review and approve the profile before it appears in the EC selector.</p>
+      <div class="wiz-field">
+        <label class="wiz-label">EC Full Name <span class="req-star">*</span></label>
+        <input id="wizEcName" type="text" class="wiz-input" placeholder="e.g. Victoria Hospital Wynberg Emergency Centre">
+      </div>
+      <div class="wiz-field">
+        <label class="wiz-label">EC Short Name <span class="req-star">*</span></label>
+        <input id="wizEcShort" type="text" class="wiz-input" placeholder="e.g. VHW EC (shown in app header)">
+      </div>
+      <div class="wiz-field">
+        <label class="wiz-label">Roster Type <span class="req-star">*</span></label>
+        <div style="display:flex;gap:16px;margin-top:6px;">
+          <label class="wiz-radio-lbl"><input type="radio" name="wizRosterType" value="shift" checked> Shift Roster only</label>
+          <label class="wiz-radio-lbl"><input type="radio" name="wizRosterType" value="consultant"> Consultant On-Call Roster</label>
+        </div>
+        <div class="wiz-hint">Choose "Consultant" if your EC uses the monthly consultant on-call PDF roster.</div>
+      </div>
+      <div id="wizDataYWrap" class="wiz-field" style="display:none;">
+        <label class="wiz-label">Header rows end at Y ≈ <span id="wizDataYDisplay">188</span> px</label>
+        <input id="wizDataY" type="range" min="80" max="400" value="188" style="width:100%;margin-top:6px;" oninput="$('wizDataYDisplay').textContent=this.value">
+        <div class="wiz-hint">Fine-tune after seeing your PDF in Step 2.</div>
+      </div>
+    </div>
+
+    <!-- ── STEP 2: Upload Sample PDF ──────────────────────────── -->
+    <div id="wizStep2" class="wiz-body" style="display:none;">
+      <p class="wiz-intro">Upload one page of your consultant on-call roster PDF. We'll render it so you can visually set column boundaries in the next step.</p>
+      <label class="upload-zone upload-zone-consultant" id="wizPdfZone" style="margin-bottom:12px;cursor:pointer;position:relative;">
+        <input type="file" id="wizPdfFile" accept=".pdf" style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:1;">
+        <span class="upload-icon">&#128196;</span>
+        <span class="upload-label">Upload Sample Consultant PDF</span>
+        <span class="upload-hint">Click or drag &amp; drop — first page will be rendered</span>
+      </label>
+      <div id="wizPdfStatus" style="font-family:var(--mono);font-size:11px;color:var(--text-muted);margin-bottom:8px;"></div>
+
+      <!-- Canvas container for rendered PDF page -->
+      <div id="wizCanvasWrap" style="display:none;position:relative;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:12px;cursor:crosshair;">
+        <canvas id="wizCanvas"></canvas>
+        <!-- Data-start Y line (red horizontal) -->
+        <div id="wizYLine" style="position:absolute;left:0;right:0;height:2px;background:#c0392b;cursor:ns-resize;z-index:10;">
+          <div style="position:absolute;right:4px;top:-18px;background:#c0392b;color:#fff;font-size:10px;font-family:var(--mono);padding:2px 5px;border-radius:3px;white-space:nowrap;">data starts ↓ &nbsp;y=<span id="wizYVal">188</span></div>
+        </div>
+      </div>
+      <div id="wizCanvasHint" style="display:none;font-family:var(--mono);font-size:11px;color:var(--text-muted);">&#8679; Drag the red line to where your data rows begin (below the header).</div>
+    </div>
+
+    <!-- ── STEP 3: Column Boundaries & Time Rules ─────────────── -->
+    <div id="wizStep3" class="wiz-body" style="display:none;">
+      <p class="wiz-intro">Drag the blue vertical lines on the PDF preview to match the column boundaries in your roster. Then fill in the time rules below.</p>
+
+      <!-- Canvas reused — column dividers overlaid -->
+      <div id="wizCanvasWrap3" style="position:relative;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:14px;cursor:crosshair;">
+        <canvas id="wizCanvas3"></canvas>
+        <!-- 5 draggable vertical dividers (blue) — define 6 column regions -->
+        <!-- divider IDs: wizDiv0..wizDiv4 — positions set by JS -->
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;" id="wizColLabels"></div>
+
+      <div class="wiz-section-title">Time Rules</div>
+      <p class="wiz-hint" style="margin-bottom:10px;">Enter times in HH:MM format (24h). These are the shift start/end times for each situation. Pre-filled with typical VHW consultant values.</p>
+      <table class="wiz-rules-table">
+        <thead><tr><th>Situation</th><th>Normal From</th><th>Normal To</th><th>OT1 From</th><th>OT1 To</th><th>OT2 From</th><th>OT2 To</th></tr></thead>
+        <tbody>
+          <tr><td>Weekday — Slot 1 + On-call</td>  <td><input class="wiz-time" id="wr_ws1c_nf"   value="07:30"></td><td><input class="wiz-time" id="wr_ws1c_nt"   value="15:30"></td><td><input class="wiz-time" id="wr_ws1c_o1f"  value="15:30"></td><td><input class="wiz-time" id="wr_ws1c_o1t"  value="16:30"></td><td><input class="wiz-time" id="wr_ws1c_o2f"  value="16:30"></td><td><input class="wiz-time" id="wr_ws1c_o2t"  value="07:30"></td></tr>
+          <tr><td>Weekday — Slot 1 only</td>       <td><input class="wiz-time" id="wr_ws1n_nf"   value="07:30"></td><td><input class="wiz-time" id="wr_ws1n_nt"   value="15:30"></td><td><input class="wiz-time" id="wr_ws1n_o1f"  value=""></td><td><input class="wiz-time" id="wr_ws1n_o1t"  value=""></td><td><input class="wiz-time" id="wr_ws1n_o2f"  value=""></td><td><input class="wiz-time" id="wr_ws1n_o2t"  value=""></td></tr>
+          <tr><td>Weekday — Slot 2 or 3</td>       <td><input class="wiz-time" id="wr_ws23_nf"   value="07:30"></td><td><input class="wiz-time" id="wr_ws23_nt"   value="15:30"></td><td><input class="wiz-time" id="wr_ws23_o1f"  value=""></td><td><input class="wiz-time" id="wr_ws23_o1t"  value=""></td><td><input class="wiz-time" id="wr_ws23_o2f"  value=""></td><td><input class="wiz-time" id="wr_ws23_o2t"  value=""></td></tr>
+          <tr><td>Weekday — On-call only</td>      <td><input class="wiz-time" id="wr_wco_nf"    value=""></td><td><input class="wiz-time" id="wr_wco_nt"    value=""></td><td><input class="wiz-time" id="wr_wco_o1f"   value="07:30"></td><td><input class="wiz-time" id="wr_wco_o1t"   value="11:30"></td><td><input class="wiz-time" id="wr_wco_o2f"   value="11:30"></td><td><input class="wiz-time" id="wr_wco_o2t"   value="07:30"></td></tr>
+          <tr><td>Weekend / Public Holiday</td>    <td><input class="wiz-time" id="wr_wph_nf"    value=""></td><td><input class="wiz-time" id="wr_wph_nt"    value=""></td><td><input class="wiz-time" id="wr_wph_o1f"   value="07:30"></td><td><input class="wiz-time" id="wr_wph_o1t"   value="11:30"></td><td><input class="wiz-time" id="wr_wph_o2f"   value="11:30"></td><td><input class="wiz-time" id="wr_wph_o2t"   value="07:30"></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ── STEP 4: Review & Submit ────────────────────────────── -->
+    <div id="wizStep4" class="wiz-body" style="display:none;">
+      <p class="wiz-intro">Review the profile JSON below, then submit for admin approval. Your EC will appear in the selector once approved.</p>
+      <pre id="wizJsonPreview" style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;font-family:var(--mono);font-size:11px;overflow-x:auto;max-height:320px;white-space:pre-wrap;word-break:break-all;"></pre>
+      <div id="wizSubmitMsg" style="margin-top:12px;font-family:var(--mono);font-size:12px;display:none;"></div>
+    </div>
+
+    <!-- Wizard footer nav -->
+    <div style="padding:14px 24px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:var(--bg);">
+      <button id="wizBackBtn" class="btn btn-secondary" style="display:none;">&#8592; Back</button>
+      <div style="flex:1;"></div>
+      <button id="wizNextBtn" class="btn btn-primary">Next &rarr;</button>
+      <button id="wizSubmitBtn" class="btn btn-primary" style="display:none;">Submit for Approval</button>
+    </div>
+
   </div>
+</div>
+
+</div>
 </div>
 
 <script>
@@ -635,7 +788,6 @@ function findAnchors(words, minCount) {
   }
   if (anchors.length < minCount) return null;
   const anchorXs = anchors.slice(0,4).map(t => t.x);
-  console.log('[Parser] Anchors y≈'+Math.round(best.y)+':', anchorXs);
   return { xs:anchorXs, y:best.y };
 }
 
@@ -778,7 +930,6 @@ async function parseRosterPDF(arrayBuffer) {
               if (consultantWords.length > 0) {
                 consultantOverride = consultantWords.map(w => w.text).join(' ').trim();
               }
-              console.log('[Parser] Found weekday "'+foundWeekday+'" on adjacent row y='+sortedYs[adj]+' for date '+dateNum+' '+pm[2]);
               break;
             }
           }
@@ -794,12 +945,10 @@ async function parseRosterPDF(arrayBuffer) {
 
           const synthetic = pm[1]+' '+pm[2]+' '+computedDay;
           dm = synthetic.match(DATE_RE);
-          if (dm) console.log('[Parser] Partial date resolved:', synthetic, consultantOverride ? '(consultant: '+consultantOverride+')' : '');
         }
 
         if (!dm) {
           if (/\b\d{1,2}\b/.test(lineText) && lineText.length < 80 && lineText.length > 1)
-            console.log('[Parser] Unmatched date-like line (y='+y+'):', JSON.stringify(lineText));
           continue;
         }
       }
@@ -1180,8 +1329,6 @@ function getConsultantShifts(consultantData, doctorName, targetMonth, profile, t
       continue;
     }
 
-    // Debug trace — remove after confirming call detection works
-    console.log(`[Consultant day ${day.date} ${day.dayName}]`, 'slot1:', JSON.stringify(day.slot1), 'call:', JSON.stringify(day.callNames), '→ inSlot1:', inSlot1, 'inCall:', inCall);
     if (!inSlot1 && !inSlot2 && !inSlot3 && !inCall) continue;
 
     const isWE = day.isWeekend;
@@ -2561,8 +2708,14 @@ function removeFile(name){
   state.parsedFiles=state.parsedFiles.filter(f=>f.name!==name);
   renderFileList();mergeAndRefresh();
   if(!state.pendingFiles.length&&!state.parsedFiles.length){
-    $('parseBtn').disabled=true;$('clearBtn').style.display='none';
-    rosterList.style.display='none';setStatus('');
+    // Only fully disable if no consultant file is also queued
+    if(!state.consultantFiles?.length){
+      $('parseBtn').disabled=true;$('clearBtn').style.display='none';
+      setStatus('');
+    } else {
+      setStatus(state.consultantFiles.length+' file(s) queued — click Extract Data','info');
+    }
+    rosterList.style.display='none';
   }
 }
 function renderFileList(){
@@ -2639,9 +2792,13 @@ $('parseBtn').addEventListener('click',async()=>{
       await parseAndStoreConsultantRoster();
       const cDocs=state.consultantData?.doctors?.size||0;
       const total2=state.rosterData?.days.length||0,docs2=state.rosterData?.doctors.size||0;
+      const nFiles2=state.parsedFiles.length+(state.consultantFile?1:0);
+      const shiftOnly2=state.parsedFiles.length>0;
       setStatus(errors
         ?`\u2713 Extracted with ${errors} error(s) \u2014 ${total2} days, ${docs2} staff`
-        :`\u2713 ${total2} days \u00b7 ${docs2} staff \u00b7 ${cDocs} consultant(s)`
+        :shiftOnly2
+          ?`\u2713 ${total2} days \u00b7 ${docs2} staff \u00b7 ${cDocs} consultant(s) across ${nFiles2} file(s)`
+          :`\u2713 ${total2} days \u00b7 ${cDocs} consultant(s) across 1 file(s)`
         ,errors?'error':'success');
     }catch(cerr){
       console.error('Consultant parse error',cerr);
@@ -2753,7 +2910,6 @@ function buildPreview(doctorName,targetMonth,targetYear){
     for (const [d, s] of Object.entries(state.editedShifts)) {
       if (!state.originalShifts[d]) state.originalShifts[d] = { ...s };
     }
-    console.log('[Consultant] Overlaid', consultantAdded, 'shifts for', doctorName);
   }
   let sc=0;
   // Build PH letter map: day number -> superscript letter (a,b,c...)
@@ -3181,7 +3337,7 @@ function applyProfile(profile) {
   activeProfile = profile;
   // Update header
   const ecShort = profile.ec_short || profile.ec_name;
-  $('headerTitle').textContent = `Duty Roster Translator — ${ecShort}`;
+  $('headerTitle').textContent = `EC Roster Translator — ${ecShort}`;
   // Store in localStorage for offline use
   localStorage.setItem(LS_PROFILE_KEY, JSON.stringify(profile));
   // Show/hide consultant zone based on profile type
@@ -3295,9 +3451,326 @@ document.addEventListener('DOMContentLoaded', () => {
     showEcPicker(profiles);
   });
 
-  // "Not listed" link — placeholder for future column mapper
-  $('ecNotListedLink').addEventListener('click', () => {
-    alert('EC profile setup wizard coming soon.\n\nFor now, contact your administrator to add your EC.');
+  // ── EC Profile Setup Wizard ──────────────────────────────────────────────────
+  let wizState = {
+    step: 1,
+    pdfBuf: null,          // ArrayBuffer of uploaded PDF
+    canvasScale: 1,        // PDF→canvas scale factor
+    pageW: 0, pageH: 0,    // rendered page dimensions (px)
+    divPositions: [],       // array of 5 x-positions (canvas px) for column dividers
+    draggingY: false,
+    draggingDiv: -1,
+    yLinePx: 0,             // red line Y (canvas px)
+  };
+  const COL_NAMES   = ['slot1','slot2','slot3','meetings','leave','call'];
+  const COL_COLOURS = ['#2D6B45','#1A6B3A','#5b9bd5','#9b59b6','#c0392b','#e67e22'];
+  const WIZ_STEPS   = 4;
+
+  function openWizard() {
+    wizState = { step:1, pdfBuf:null, canvasScale:1, pageW:0, pageH:0, divPositions:[], draggingY:false, draggingDiv:-1, yLinePx:0 };
+    $('wizardOverlay').style.display = '';
+    wizGoto(1);
+  }
+  function closeWizard() { $('wizardOverlay').style.display = 'none'; }
+
+  $('ecNotListedLink').addEventListener('click', openWizard);
+  $('wizCloseBtn').addEventListener('click', closeWizard);
+  $('wizardOverlay').addEventListener('click', e => { if (e.target === $('wizardOverlay')) closeWizard(); });
+
+  function wizGoto(step) {
+    wizState.step = step;
+    const isConsultant = document.querySelector('input[name="wizRosterType"]:checked')?.value === 'consultant';
+    // Show/hide steps
+    for (let i = 1; i <= WIZ_STEPS; i++) {
+      const el = $('wizStep' + i);
+      if (el) el.style.display = i === step ? '' : 'none';
+    }
+    // Update tabs
+    for (let i = 1; i <= WIZ_STEPS; i++) {
+      const tab = $('wizTab' + i);
+      if (!tab) continue;
+      tab.className = 'wiz-step-tab' + (i === step ? ' active' : (i < step ? ' done' : ''));
+    }
+    $('wizStepLabel').textContent = `Step ${step} of ${WIZ_STEPS}`;
+    $('wizBackBtn').style.display = step > 1 ? '' : 'none';
+    $('wizNextBtn').style.display = step < WIZ_STEPS ? '' : 'none';
+    $('wizSubmitBtn').style.display = step === WIZ_STEPS ? '' : 'none';
+    $('wizSubmitMsg').style.display = 'none';
+
+    // Step-specific init
+    if (step === 2 && !isConsultant) { wizGoto(4); return; } // skip steps 2+3 for shift-only
+    if (step === 3 && !isConsultant) { wizGoto(4); return; }
+    if (step === 3) wizInitColStep();
+    if (step === 4) wizBuildJson();
+  }
+
+  $('wizBackBtn').addEventListener('click', () => {
+    const isConsultant = document.querySelector('input[name="wizRosterType"]:checked')?.value === 'consultant';
+    if (wizState.step === 4 && !isConsultant) wizGoto(1);
+    else if (wizState.step > 1) wizGoto(wizState.step - 1);
+  });
+
+  $('wizNextBtn').addEventListener('click', () => {
+    if (!wizValidate(wizState.step)) return;
+    wizGoto(wizState.step + 1);
+  });
+
+  // Step 1: show/hide data_start_y when consultant selected
+  document.querySelectorAll('input[name="wizRosterType"]').forEach(r => {
+    r.addEventListener('change', () => {
+      const isCons = r.value === 'consultant';
+      $('wizDataYWrap').style.display = isCons ? '' : 'none';
+    });
+  });
+
+  function wizValidate(step) {
+    if (step === 1) {
+      if (!$('wizEcName').value.trim()) { $('wizEcName').focus(); return false; }
+      if (!$('wizEcShort').value.trim()) { $('wizEcShort').focus(); return false; }
+    }
+    if (step === 2) {
+      if (!wizState.pdfBuf) { $('wizPdfStatus').textContent = 'Please upload a PDF first.'; return false; }
+    }
+    return true;
+  }
+
+  // ── Step 2: PDF upload + render ──────────────────────────────────────────
+  $('wizPdfFile').addEventListener('change', async e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    $('wizPdfStatus').textContent = 'Rendering PDF…';
+    try {
+      wizState.pdfBuf = await readFile(file);
+      await wizRenderPdf(wizState.pdfBuf, 'wizCanvas', 'wizCanvasWrap', 'wizYLine');
+      $('wizPdfStatus').textContent = '✓ ' + file.name;
+      $('wizCanvasHint').style.display = '';
+    } catch(err) {
+      $('wizPdfStatus').textContent = 'Error: ' + err.message;
+    }
+    e.target.value = '';
+  });
+
+  async function wizRenderPdf(buf, canvasId, wrapId, yLineId) {
+    const pdf  = await pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise;
+    const page = await pdf.getPage(1);
+    const wrap = $(wrapId);
+    const maxW = wrap.clientWidth || 700;
+    const vp0  = page.getViewport({ scale: 1 });
+    const scale = Math.min((maxW - 2) / vp0.width, 2.5);
+    const vp   = page.getViewport({ scale });
+    const canvas = $(canvasId);
+    canvas.width  = vp.width;
+    canvas.height = vp.height;
+    wizState.canvasScale = scale;
+    wizState.pageW = vp.width;
+    wizState.pageH = vp.height;
+    await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+    wrap.style.display = '';
+    // Position red Y line
+    const dataY = parseInt($('wizDataY').value) || 188;
+    const yPx   = dataY * scale;
+    wizState.yLinePx = yPx;
+    if (yLineId) {
+      const yLine = $(yLineId);
+      yLine.style.top = yPx + 'px';
+      $('wizYVal').textContent = dataY;
+    }
+    // Default col dividers: evenly spaced from 20% to 90% of canvas width
+    if (wizState.divPositions.length === 0) {
+      wizState.divPositions = [0.25, 0.38, 0.51, 0.64, 0.77].map(f => Math.round(f * vp.width));
+    }
+    // Setup Y line drag
+    if (yLineId) wizSetupYDrag($(yLineId), $(wrapId));
+  }
+
+  function wizSetupYDrag(yLine, wrap) {
+    const startDrag = (clientY) => {
+      wizState.draggingY = true;
+      const rect = wrap.getBoundingClientRect();
+      const onMove = (cy) => {
+        if (!wizState.draggingY) return;
+        const raw   = cy - rect.top;
+        const clamped = Math.max(10, Math.min(wizState.pageH - 10, raw));
+        wizState.yLinePx = clamped;
+        yLine.style.top  = clamped + 'px';
+        const dataY = Math.round(clamped / wizState.canvasScale);
+        $('wizYVal').textContent = dataY;
+        $('wizDataY').value      = dataY;
+        $('wizDataYDisplay').textContent = dataY;
+      };
+      const onUp = () => {
+        wizState.draggingY = false;
+        document.removeEventListener('mousemove', mMove);
+        document.removeEventListener('mouseup', mUp);
+        document.removeEventListener('touchmove', tMove);
+        document.removeEventListener('touchend', mUp);
+      };
+      const mMove = e => onMove(e.clientY);
+      const tMove = e => onMove(e.touches[0].clientY);
+      const mUp = onUp;
+      document.addEventListener('mousemove', mMove);
+      document.addEventListener('mouseup',   mUp);
+      document.addEventListener('touchmove', tMove, {passive:false});
+      document.addEventListener('touchend',  mUp);
+    };
+    yLine.addEventListener('mousedown', e  => { e.preventDefault(); startDrag(e.clientY); });
+    yLine.addEventListener('touchstart', e => { e.preventDefault(); startDrag(e.touches[0].clientY); }, {passive:false});
+  }
+
+  // ── Step 3: column dividers ───────────────────────────────────────────────
+  function wizInitColStep() {
+    const wrap3 = $('wizCanvasWrap3');
+    const canvas3 = $('wizCanvas3');
+    // Copy rendered image from step 2 canvas
+    if (wizState.pageW && wizState.pageH) {
+      canvas3.width  = wizState.pageW;
+      canvas3.height = wizState.pageH;
+      const ctx = canvas3.getContext('2d');
+      ctx.drawImage($('wizCanvas'), 0, 0);
+    }
+    // Remove old dividers
+    wrap3.querySelectorAll('.wiz-div').forEach(d => d.remove());
+    // Build 5 dividers
+    COL_NAMES.slice(0, 5).forEach((_, i) => {
+      const div = document.createElement('div');
+      div.className = 'wiz-div';
+      div.dataset.idx = i;
+      div.style.cssText = `position:absolute;top:0;bottom:0;width:3px;background:${COL_COLOURS[i]};opacity:0.8;cursor:ew-resize;z-index:10;`;
+      div.style.left = wizState.divPositions[i] + 'px';
+      // Label pip
+      const pip = document.createElement('div');
+      pip.style.cssText = `position:absolute;top:4px;left:50%;transform:translateX(-50%);background:${COL_COLOURS[i]};color:#fff;font-size:9px;font-family:monospace;padding:1px 4px;border-radius:2px;white-space:nowrap;`;
+      pip.textContent = COL_NAMES[i + 1];
+      div.appendChild(pip);
+      wrap3.appendChild(div);
+      setupDivDrag(div, wrap3);
+    });
+    // Render colour chips
+    renderColChips();
+    if (wizState.pageW && wizState.pageH) wrap3.style.display = '';
+  }
+
+  function setupDivDrag(divEl, wrap) {
+    const startDrag = (clientX) => {
+      const idx  = parseInt(divEl.dataset.idx);
+      const rect = wrap.getBoundingClientRect();
+      const onMove = (cx) => {
+        const raw = cx - rect.left;
+        const lo  = idx > 0 ? wizState.divPositions[idx - 1] + 8 : 8;
+        const hi  = idx < 4 ? wizState.divPositions[idx + 1] - 8 : wizState.pageW - 8;
+        const clamped = Math.max(lo, Math.min(hi, raw));
+        wizState.divPositions[idx] = clamped;
+        divEl.style.left = clamped + 'px';
+        renderColChips();
+      };
+      const onUp = () => {
+        document.removeEventListener('mousemove', mMove);
+        document.removeEventListener('mouseup',   mUp);
+        document.removeEventListener('touchmove', tMove);
+        document.removeEventListener('touchend',  mUp);
+      };
+      const mMove = e => onMove(e.clientX);
+      const tMove = e => { e.preventDefault(); onMove(e.touches[0].clientX); };
+      const mUp = onUp;
+      document.addEventListener('mousemove', mMove);
+      document.addEventListener('mouseup',   mUp);
+      document.addEventListener('touchmove', tMove, {passive:false});
+      document.addEventListener('touchend',  mUp);
+    };
+    divEl.addEventListener('mousedown',  e => { e.preventDefault(); startDrag(e.clientX); });
+    divEl.addEventListener('touchstart', e => { e.preventDefault(); startDrag(e.touches[0].clientX); }, {passive:false});
+  }
+
+  function renderColChips() {
+    const wrap = $('wizColLabels');
+    wrap.innerHTML = '';
+    const positions = [0, ...wizState.divPositions, wizState.pageW];
+    COL_NAMES.forEach((name, i) => {
+      const x_min = Math.round(positions[i] / wizState.canvasScale);
+      const x_max = Math.round(positions[i + 1] / wizState.canvasScale);
+      const chip = document.createElement('span');
+      chip.className = 'wiz-col-chip';
+      chip.style.background = COL_COLOURS[i] + '22';
+      chip.style.color = COL_COLOURS[i];
+      chip.style.border = '1px solid ' + COL_COLOURS[i] + '66';
+      chip.textContent = `${name}: ${x_min}–${x_max}`;
+      wrap.appendChild(chip);
+    });
+  }
+
+  // ── Step 4: build profile JSON ───────────────────────────────────────────
+  function wizBuildJson() {
+    const isConsultant = document.querySelector('input[name="wizRosterType"]:checked')?.value === 'consultant';
+    const profile = {
+      ec_short:    $('wizEcShort').value.trim(),
+      roster_type: isConsultant ? 'consultant' : 'shift',
+    };
+    if (isConsultant) {
+      const dataY = parseInt($('wizDataY').value) || 188;
+      profile.data_start_y = dataY;
+      const positions = [0, ...wizState.divPositions, wizState.pageW];
+      const pdf_columns = {};
+      COL_NAMES.forEach((name, i) => {
+        pdf_columns[name] = {
+          x_min: Math.round(positions[i] / wizState.canvasScale),
+          x_max: Math.round(positions[i + 1] / wizState.canvasScale),
+        };
+      });
+      profile.pdf_columns = pdf_columns;
+      const t = id => $('wr_' + id).value.trim() || null;
+      const pair = (a, b) => (t(a) && t(b)) ? [t(a), t(b)] : null;
+      profile.time_rules = {
+        weekday_slot1_oncall:    { normal: pair('ws1c_nf','ws1c_nt'),  ot1: pair('ws1c_o1f','ws1c_o1t'),  ot2: pair('ws1c_o2f','ws1c_o2t')  },
+        weekday_slot1_no_oncall: { normal: pair('ws1n_nf','ws1n_nt'),  ot1: pair('ws1n_o1f','ws1n_o1t'),  ot2: pair('ws1n_o2f','ws1n_o2t')  },
+        weekday_slot2_3:         { normal: pair('ws23_nf','ws23_nt'),  ot1: pair('ws23_o1f','ws23_o1t'),  ot2: pair('ws23_o2f','ws23_o2t')  },
+        weekday_call_only:       { normal: pair('wco_nf','wco_nt'),    ot1: pair('wco_o1f','wco_o1t'),    ot2: pair('wco_o2f','wco_o2t')    },
+        weekend_ph:              { normal: pair('wph_nf','wph_nt'),    ot1: pair('wph_o1f','wph_o1t'),    ot2: pair('wph_o2f','wph_o2t')    },
+      };
+    }
+    $('wizJsonPreview').textContent = JSON.stringify(profile, null, 2);
+    return { ecName: $('wizEcName').value.trim(), profile };
+  }
+
+  // ── Submit ───────────────────────────────────────────────────────────────
+  $('wizSubmitBtn').addEventListener('click', async () => {
+    const { ecName, profile } = wizBuildJson();
+    const msg = $('wizSubmitMsg');
+    $('wizSubmitBtn').disabled = true;
+    $('wizSubmitBtn').textContent = 'Submitting…';
+    msg.style.display = '';
+    msg.style.color = 'var(--text-muted)';
+    msg.textContent = 'Submitting to Supabase…';
+    try {
+      const res = await fetch(`${SUPA_URL}/rest/v1/ec_profiles`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPA_ANON,
+          'Authorization': 'Bearer ' + SUPA_ANON,
+          'Prefer': 'return=minimal',
+        },
+        body: JSON.stringify({
+          ec_name: ecName,
+          ec_short: profile.ec_short,
+          status: 'pending',
+          profile: profile,
+        }),
+      });
+      if (res.ok || res.status === 201) {
+        msg.style.color = 'var(--success)';
+        msg.textContent = '✓ Submitted! An administrator will review and approve your profile. You\'ll be notified when it goes live.';
+        $('wizSubmitBtn').style.display = 'none';
+        $('wizNextBtn').style.display = 'none';
+      } else {
+        const txt = await res.text();
+        throw new Error(`Server responded ${res.status}: ${txt}`);
+      }
+    } catch(err) {
+      msg.style.color = 'var(--warn)';
+      msg.textContent = 'Error: ' + err.message;
+    }
+    $('wizSubmitBtn').disabled = false;
+    $('wizSubmitBtn').textContent = 'Submit for Approval';
   });
 
   // Run initialisation
@@ -3412,7 +3885,6 @@ async function parseAndStoreConsultantRoster() {
       result.doctors.forEach(d => allDoctors.add(d));
       lastDetectedMonth = detectedMonth;
       lastDetectedYear  = year;
-      console.log('[Consultant] Parsed', cFile.name, '—', result.days.length, 'days');
     } catch(err) {
       console.error('[Consultant] Parse error for', cFile.name, err);
     }
