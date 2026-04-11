@@ -1,12 +1,12 @@
-# EC Shift Roster Translator
+# EC Roster Translator
 
-A browser-based tool that parses monthly shift roster PDFs and generates WCG-formatted duty roster timesheets, overtime verification forms, and leave application documents — entirely offline, no installation required.
+A browser-based tool that parses monthly shift rosters and generates WCG-formatted duty roster timesheets, overtime verification forms, and leave application documents — entirely offline, no installation required. This tool has been built for Victoria Hospital Emergency Centre, Cape Town.
 
 ---
 
 ## What it does
 
-1. **Upload** one or more monthly roster PDFs
+1. **Upload and extract** one or more monthly roster PDFs
 2. **Select** a doctor, month, and year
 3. **Preview and edit** the parsed shift data in an interactive table
 4. **Download** the completed documents:
@@ -71,4 +71,6 @@ README.md
 
 ## Developed for
 
-Emergency Centre, Victoria Hospital, Wynberg, Cape Town
+Victoria Hospital Emergency Centre, Cape Town
+
+
