@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v20260411-0804 -->
+<!-- v20260411-0826 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -455,7 +455,7 @@ header h1 { font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.92); }
         <button class="btn-outline" id="z1aBtn" style="display:none;">&#8595; Download Z1(a) Leave Form</button>
       </div>
       <div style="display:flex;justify-content:center;margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
-        <button id="resetFormBtn" style="font-family:var(--sans);font-size:12px;font-weight:400;color:var(--text-faint);background:none;border:none;cursor:pointer;padding:4px 8px;">&#8635; Start Over</button>
+        <button id="resetFormBtn" class="btn-clear">&#8635; Start Over</button>
       </div>
     </div>
   
@@ -1357,7 +1357,7 @@ function getConsultantShifts(consultantData, doctorName, targetMonth, profile, t
         nt: '',
         of: t(rule.ot1 ? rule.ot1[0] : (rule.ot2 ? rule.ot2[0] : '')),
         ot: t(rule.ot2 ? rule.ot2[1] : (rule.ot1 ? rule.ot1[1] : '')),
-        typeLabel: isPH ? 'Cons. Call - Public Holiday' : 'Cons. Call - Weekend',
+        typeLabel: isPH ? 'On-Call - Public Holiday' : 'On-Call - Weekend',
         ot1f: t(rule.ot1 ? rule.ot1[0] : ''),
         ot1t: t(rule.ot1 ? rule.ot1[1] : ''),
         ot2f: t(rule.ot2 ? rule.ot2[0] : ''),
@@ -1374,8 +1374,8 @@ function getConsultantShifts(consultantData, doctorName, targetMonth, profile, t
       const of_ = rule.ot2 ? t(rule.ot2[0]) : t(rule.ot1 ? rule.ot1[0] : '');
       const ot_ = rule.ot2 ? t(rule.ot2[1]) : t(rule.ot1 ? rule.ot1[1] : '');
       const label = inCall
-        ? 'Cons. Call - Weekday'
-        : (nf ? `Consultant Day - ${nf}` : 'Cons. Normal Hours - Weekday');
+        ? 'On Call - Weekday'
+        : (nf ? `Consultant Day - ${nf}` : 'Normal Hours - Weekday');
       result[day.date] = {
         nf, nt, of: of_, ot: ot_, typeLabel: label,
         // Keep OT1 for Excel generator
@@ -2463,10 +2463,10 @@ const ACTIVITY_TYPES=[
 
 // Consultant-mode activity types (replaces shift types when consultant roster active)
 const CONSULTANT_ACTIVITY_TYPES=[
-  'Cons. Normal Hours - Weekday',
-  'Cons. Call - Weekday',
-  'Cons. Call - Weekend',
-  'Cons. Call - Public Holiday',
+  'Normal Hours - Weekday',
+  'On Call - Weekday',
+  'On-Call - Weekend',
+  'On-Call - Public Holiday',
   'Leave - Annual','Leave - Sick','Leave - Family Responsibility',
   'Leave - Study','Leave - Special','Leave - Prenatal','Leave - Maternity',
   'Leave - Paternity','Workshop','Course','Conference'
@@ -2474,10 +2474,10 @@ const CONSULTANT_ACTIVITY_TYPES=[
 
 // Consultant shift type → auto-fill times (6 fields: nf,nt,ot1f,ot1t,ot2f,ot2t)
 const CONSULTANT_SHIFT_TIMES = {
-  'Cons. Normal Hours - Weekday':         {nf:'07H30',nt:'15H30',ot1f:'15H30',ot1t:'16H30',ot2f:'',    ot2t:''},
-  'Cons. Call - Weekday':      {nf:'07H30',nt:'15H30',ot1f:'15H30',ot1t:'16H30',ot2f:'16H30',ot2t:'07H30'},
-  'Cons. Call - Weekend':      {nf:'',     nt:'',     ot1f:'07H30',ot1t:'11H30',ot2f:'11H30',ot2t:'07H30'},
-  'Cons. Call - Public Holiday':{nf:'',    nt:'',     ot1f:'07H30',ot1t:'11H30',ot2f:'11H30',ot2t:'07H30'},
+  'Normal Hours - Weekday':         {nf:'07H30',nt:'15H30',ot1f:'15H30',ot1t:'16H30',ot2f:'',    ot2t:''},
+  'On Call - Weekday':      {nf:'07H30',nt:'15H30',ot1f:'15H30',ot1t:'16H30',ot2f:'16H30',ot2t:'07H30'},
+  'On-Call - Weekend':      {nf:'',     nt:'',     ot1f:'07H30',ot1t:'11H30',ot2f:'11H30',ot2t:'07H30'},
+  'On-Call - Public Holiday':{nf:'',    nt:'',     ot1f:'07H30',ot1t:'11H30',ot2f:'11H30',ot2t:'07H30'},
 };
 
 // Shift type → auto-fill times
@@ -2499,9 +2499,9 @@ function typeOptsFor(isSpecial, selectedType) {
   if (isConsultantMode) {
     // Consultant mode: show consultant types; filter weekend/PH types for special days
     filtered = CONSULTANT_ACTIVITY_TYPES.filter(t => {
-      if (t === 'Cons. Normal Hours - Weekday') return !isSpecial;
-      if (t === 'Cons. Call - Weekend') return isSpecial;
-      if (t === 'Cons. Call - Public Holiday') return isSpecial;
+      if (t === 'Normal Hours - Weekday') return !isSpecial;
+      if (t === 'On-Call - Weekend') return isSpecial;
+      if (t === 'On-Call - Public Holiday') return isSpecial;
       return true;
     });
   } else {
@@ -2966,7 +2966,7 @@ function buildPreview(doctorName,targetMonth,targetYear){
     const es=state.editedShifts[d];
     const isSpecial=isWE||!!phName;
     const defaultType = isConsultantMode2
-      ? (isSpecial ? 'Cons. Call - Weekend' : 'Cons. Normal Hours - Weekday')
+      ? (isSpecial ? 'On-Call - Weekend' : 'Normal Hours - Weekday')
       : (isSpecial ? 'WE Shift - 08H00' : 'WD Shift - 08H00');
     const selectedType=es?.typeLabel||defaultType;
     // PH styling: date cell shows "21*" in dark red, day cell also dark red
@@ -3022,11 +3022,11 @@ function buildPreview(doctorName,targetMonth,targetYear){
     }
   }
   html+=`</tbody></table></div>
-  <div style="margin-top:10px;font-family:var(--mono);font-size:11px;color:var(--text-muted);">
+  <div style="margin-top:10px;font-family:var(--sans);font-size:12px;color:var(--text-muted);">
     ${sc} activit${sc!==1?'ies':'y'} found &middot; <strong>${doctorName}</strong> &middot; ${MONTH_NAMES[targetMonth]} ${targetYear}
   </div>`;
   if(phFootnotes.length>0){
-    html+=`<div style="margin-top:8px;font-family:var(--mono);font-size:11px;color:#8B1A1A;line-height:1.8;">`+
+    html+=`<div style="margin-top:8px;font-family:var(--sans);font-size:12px;color:#8B1A1A;line-height:1.8;">`+
       phFootnotes.map(f=>`<span style="margin-right:16px;"><sup style="font-size:9px;">${f.letter}</sup> ${f.name}</span>`).join('')+
     `</div>`;
   }
@@ -3037,7 +3037,7 @@ function buildPreview(doctorName,targetMonth,targetYear){
 function makeRowInner(d,isWE,phName,dayName,es){
   const isSpecial=isWE||!!phName;
   const isConsMode=activeProfile&&activeProfile.roster_type==='consultant'&&state.consultantData;
-  const selectedType=es?.typeLabel||(isConsMode?(isSpecial?'Cons. Call - Weekend':'Cons. Normal Hours - Weekday'):(isSpecial?'WE Shift - 08H00':'WD Shift - 08H00'));
+  const selectedType=es?.typeLabel||(isConsMode?(isSpecial?'On-Call - Weekend':'Normal Hours - Weekday'):(isSpecial?'WE Shift - 08H00':'WD Shift - 08H00'));
   const phStyle=phName?'color:#8B1A1A;font-weight:600;':'';
   const phLetter=(state.phLetterMap&&state.phLetterMap[d])||'';
   const dateCell=phName
@@ -3205,7 +3205,7 @@ function attachEditHandlers(){
         const isSpecialNew=btn.dataset.isSpecial==='1';
         const isConsMode=activeProfile&&activeProfile.roster_type==='consultant'&&state.consultantData;
         const defaultLabel=isConsMode
-          ?(isSpecialNew?'Cons. Call - Weekend':'Cons. Normal Hours - Weekday')
+          ?(isSpecialNew?'On-Call - Weekend':'Normal Hours - Weekday')
           :(isSpecialNew?'WE Shift - 08H00':'WD Shift - 08H00');
         const defaultTimes=isConsMode?(CONSULTANT_SHIFT_TIMES[defaultLabel]||{}):(SHIFT_TIMES[defaultLabel]||{});
         const def=isConsMode
