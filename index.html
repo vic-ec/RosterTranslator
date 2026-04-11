@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v20260411-0650 -->
+<!-- v20260411-0720 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -927,7 +927,7 @@ async function parseRosterPDF(arrayBuffer) {
 
           // Look up weekday from SA PH calendar
           const phKey = rosterYear+'-'+String(monthIdx+1).padStart(2,'0')+'-'+String(dateNum).padStart(2,'0');
-          let computedDay = foundWeekday || phCal.get(phKey);
+          let computedDay = foundWeekday || (phCal ? phCal.get(phKey) : null);
 
           // If not in PH calendar, compute from date arithmetic anyway
           if (!computedDay) {
