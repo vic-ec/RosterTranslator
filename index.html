@@ -279,7 +279,7 @@ header h1 { font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.92); }
             </select>
             <button class="btn btn-primary" id="ecConfirmBtn" disabled>Continue</button>
           </div>
-          <div class="ec-not-listed">Not listed? <a href="mailto:Paul.Xafis@westerncape.gov.za?subject=EC%20Roster%20Translator%20%E2%80%94%20New%20EC%20Profile%20Request" id="ecNotListedLink">Contact Paul Xafis to set up your EC</a></div>
+          <div class="ec-not-listed">Not listed? <a href="/cdn-cgi/l/email-protection#431322362f6d1b22252a30033426303726312d202233266d242c356d39227c303621292620377e0600667173112c303726316671731731222d302f22372c31667173660671667b73667a776671730d2634667173060066717313312c252a2f2666717311263236263037" id="ecNotListedLink">Contact Paul Xafis to set up your EC</a></div>
         </div>
         <div id="ecOfflineNote" style="display:none;" class="info-note">
           <span class="icon">&#x26A0;</span>
@@ -370,7 +370,7 @@ header h1 { font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.92); }
         </div>
         <div class="field-preview">
           <label style="visibility:hidden">&#x200b;</label>
-          <button class="btn btn-secondary btn-preview" id="previewBtn" disabled>Preview</button>
+          <button class="btn btn-secondary btn-preview" id="previewBtn" disabled>Preview Schedule</button>
         </div>
       </div>
     </div>
@@ -420,7 +420,8 @@ header h1 { font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.92); }
           <label>Date of Signature<span class="req-star">*</span> <span style="font-weight:400;font-size:10px;color:var(--text-faint)">DD/MM/YYYY</span></label>
           <div class="date-picker-wrap">
             <input type="text" id="detailSigDate" maxlength="10"/>
-            <input type="date" id="detailSigDatePicker" title="Open calendar"/>
+            <input type="date" id="detailSigDatePicker" style="position:absolute;opacity:0;width:0;height:0;pointer-events:none;" tabindex="-1"/>
+            <button type="button" id="detailSigDateBtn" title="Open calendar" onclick="document.getElementById('detailSigDatePicker').showPicker()" style="border:1px solid var(--border-strong);border-radius:var(--radius);padding:6px 8px;background:var(--surface);color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="14" x2="8" y2="14"/><line x1="12" y1="14" x2="12" y2="14"/><line x1="16" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="8" y2="18"/><line x1="12" y1="18" x2="12" y2="18"/><line x1="16" y1="18" x2="16" y2="18"/></svg></button>
           </div>
         </div>
       </div>
@@ -450,9 +451,9 @@ header h1 { font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.92); }
         </div>
       </div>
       <div class="downloads-row">
-        <button class="btn btn-success" id="proceedDownloadBtn" style="display:none;">&#8595; Download Duty Roster</button>
-        <button class="btn-outline" id="annexureCBtn" style="display:none;">&#8595; Download Annexure C (Overtime) Form</button>
-        <button class="btn-outline" id="z1aBtn" style="display:none;">&#8595; Download Z1(a) Leave Form</button>
+        <button class="btn btn-success" id="proceedDownloadBtn" style="display:none;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:5px"><path d="M12 2v10"/><path d="m5 15 7 7 7-7"/><line x1="5" y1="22" x2="19" y2="22"/></svg>Download Duty Roster</button>
+        <button class="btn-outline" id="annexureCBtn" style="display:none;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:5px"><path d="M12 2v10"/><path d="m5 15 7 7 7-7"/><line x1="5" y1="22" x2="19" y2="22"/></svg>Download Annexure C (Overtime) Form</button>
+        <button class="btn-outline" id="z1aBtn" style="display:none;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:5px"><path d="M12 2v10"/><path d="m5 15 7 7 7-7"/><line x1="5" y1="22" x2="19" y2="22"/></svg>Download Z1(a) Leave Form</button>
       </div>
       <div style="display:flex;justify-content:center;margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
         <button id="resetFormBtn" class="btn-clear">&#8635; Start Over</button>
@@ -461,7 +462,7 @@ header h1 { font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.92); }
   
 <div style="text-align:center;padding:16px 0 32px;font-family:var(--sans);font-size:12px;color:var(--text-faint);">
   Have a suggestion or want to report a problem?
-  <a href="mailto:Paul.Xafis@westerncape.gov.za?subject=EC%20Roster%20Translator%20%E2%80%94%20Feedback" style="color:var(--accent-mid);text-decoration:underline;margin-left:4px;">Send feedback</a>
+  <a href="/cdn-cgi/l/email-protection#bbebdaced795e3daddd2c8fbccdec8cfdec9d5d8dacbde95dcd4cd95c1da84c8ced9d1ded8cf86fef89e898be9d4c8cfdec99e898befc9dad5c8d7dacfd4c99e898b9efe899e838b9e828f9e898bfddededfd9dad8d0" style="color:var(--accent-mid);text-decoration:underline;margin-left:4px;">Send feedback</a>
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════════════
@@ -582,7 +583,7 @@ header h1 { font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.92); }
 </div>
 </div>
 
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 pdfjsLib.GlobalWorkerOptions.workerSrc='js/pdf.worker.min.js';
 
 // === GENERIC TEMPLATE ===
@@ -1362,7 +1363,7 @@ function getConsultantShifts(consultantData, doctorName, targetMonth, profile, t
         nt: '',
         of: t(rule.ot1 ? rule.ot1[0] : (rule.ot2 ? rule.ot2[0] : '')),
         ot: t(rule.ot2 ? rule.ot2[1] : (rule.ot1 ? rule.ot1[1] : '')),
-        typeLabel: isPH ? 'On-Call - Public Holiday' : 'On-Call - Weekend',
+        typeLabel: isPH ? 'On Call - Public Holiday' : 'On Call - Weekend',
         ot1f: t(rule.ot1 ? rule.ot1[0] : ''),
         ot1t: t(rule.ot1 ? rule.ot1[1] : ''),
         ot2f: t(rule.ot2 ? rule.ot2[0] : ''),
@@ -2470,8 +2471,8 @@ const ACTIVITY_TYPES=[
 const CONSULTANT_ACTIVITY_TYPES=[
   'Normal Hours - Weekday',
   'On Call - Weekday',
-  'On-Call - Weekend',
-  'On-Call - Public Holiday',
+  'On Call - Weekend',
+  'On Call - Public Holiday',
   'Leave - Annual','Leave - Sick','Leave - Family Responsibility',
   'Leave - Study','Leave - Special','Leave - Prenatal','Leave - Maternity',
   'Leave - Paternity','Workshop','Course','Conference'
@@ -2481,8 +2482,8 @@ const CONSULTANT_ACTIVITY_TYPES=[
 const CONSULTANT_SHIFT_TIMES = {
   'Normal Hours - Weekday':         {nf:'07H30',nt:'15H30',ot1f:'15H30',ot1t:'16H30',ot2f:'',    ot2t:''},
   'On Call - Weekday':      {nf:'07H30',nt:'15H30',ot1f:'15H30',ot1t:'16H30',ot2f:'16H30',ot2t:'07H30'},
-  'On-Call - Weekend':      {nf:'',     nt:'',     ot1f:'07H30',ot1t:'11H30',ot2f:'11H30',ot2t:'07H30'},
-  'On-Call - Public Holiday':{nf:'',    nt:'',     ot1f:'07H30',ot1t:'11H30',ot2f:'11H30',ot2t:'07H30'},
+  'On Call - Weekend':      {nf:'',     nt:'',     ot1f:'07H30',ot1t:'11H30',ot2f:'11H30',ot2t:'07H30'},
+  'On Call - Public Holiday':{nf:'',    nt:'',     ot1f:'07H30',ot1t:'11H30',ot2f:'11H30',ot2t:'07H30'},
 };
 
 // Shift type → auto-fill times
@@ -2496,17 +2497,20 @@ const SHIFT_TIMES = {
   'WE Shift - 20H00': {nf:'20H00',nt:'04H00',of:'04H00',ot:'10H00'},
 };
 
-// Return filtered ACTIVITY_TYPES for a given row (WD/WE-aware)
-// isSpecial = isWE || isPublicHoliday
-function typeOptsFor(isSpecial, selectedType) {
+// Return filtered ACTIVITY_TYPES for a given row (WD/WE/PH-aware)
+// isWE = Saturday or Sunday; isPH = public holiday (can be any day)
+function typeOptsFor(isWE, isPH, selectedType) {
+  const isSpecial = isWE || isPH;
   const isConsultantMode = activeProfile && activeProfile.roster_type === 'consultant' && state.consultantData;
   let filtered;
   if (isConsultantMode) {
-    // Consultant mode: show consultant types; filter weekend/PH types for special days
+    // Normalise selectedType: Consultant Day - HHhMM → Normal Hours - Weekday
+    if (selectedType && selectedType.startsWith('Consultant Day')) selectedType = 'Normal Hours - Weekday';
     filtered = CONSULTANT_ACTIVITY_TYPES.filter(t => {
       if (t === 'Normal Hours - Weekday') return !isSpecial;
-      if (t === 'On-Call - Weekend') return isSpecial;
-      if (t === 'On-Call - Public Holiday') return isSpecial;
+      if (t === 'On Call - Weekday')      return !isWE && !isPH;
+      if (t === 'On Call - Weekend')      return isWE && !isPH;
+      if (t === 'On Call - Public Holiday') return isPH;
       return true;
     });
   } else {
@@ -2971,7 +2975,7 @@ function buildPreview(doctorName,targetMonth,targetYear){
     const es=state.editedShifts[d];
     const isSpecial=isWE||!!phName;
     const defaultType = isConsultantMode2
-      ? (isSpecial ? 'On-Call - Weekend' : 'Normal Hours - Weekday')
+      ? (isSpecial ? 'On Call - Weekend' : 'Normal Hours - Weekday')
       : (isSpecial ? 'WE Shift - 08H00' : 'WD Shift - 08H00');
     const selectedType=es?.typeLabel||defaultType;
     // PH styling: date cell shows "21*" in dark red, day cell also dark red
@@ -2990,7 +2994,7 @@ function buildPreview(doctorName,targetMonth,targetYear){
       if(isConsultantMode2){
         html+=`<tr data-day="${d}" class="${rowClass}">
           ${dateCell}${dayCell}
-          <td><select class="type-select" data-day="${d}" data-is-special="${isSpecial?1:0}">${typeOptsFor(isSpecial,selectedType)}</select></td>
+          <td><select class="type-select" data-day="${d}" data-is-special="${isSpecial?1:0}">${typeOptsFor(isWE,!!phName,selectedType)}</select></td>
           <td><input class="time-edit" data-day="${d}" data-field="nf"   value="${es.nf||''}"   placeholder="\u2014" maxlength="5" inputmode="numeric"></td>
           <td><input class="time-edit" data-day="${d}" data-field="nt"   value="${es.nt||''}"   placeholder="\u2014" maxlength="5" inputmode="numeric"></td>
           <td><input class="time-edit" data-day="${d}" data-field="ot1f" value="${es.ot1f||''}" placeholder="\u2014" maxlength="5" inputmode="numeric" style="color:#2a5a8a;"></td>
@@ -3002,7 +3006,7 @@ function buildPreview(doctorName,targetMonth,targetYear){
       } else {
         html+=`<tr data-day="${d}" class="${rowClass}">
           ${dateCell}${dayCell}
-          <td><select class="type-select" data-day="${d}" data-is-special="${isSpecial?1:0}">${typeOptsFor(isSpecial,selectedType)}</select></td>
+          <td><select class="type-select" data-day="${d}" data-is-special="${isSpecial?1:0}">${typeOptsFor(isWE,!!phName,selectedType)}</select></td>
           <td><input class="time-edit" data-day="${d}" data-field="nf" value="${es.nf||''}" maxlength="5" inputmode="numeric"></td>
           <td><input class="time-edit" data-day="${d}" data-field="nt" value="${es.nt||''}" maxlength="5" inputmode="numeric"></td>
           <td><input class="time-edit" data-day="${d}" data-field="of" value="${es.of||''}" placeholder="\u2014" maxlength="5" inputmode="numeric"></td>
@@ -3042,7 +3046,7 @@ function buildPreview(doctorName,targetMonth,targetYear){
 function makeRowInner(d,isWE,phName,dayName,es){
   const isSpecial=isWE||!!phName;
   const isConsMode=activeProfile&&activeProfile.roster_type==='consultant'&&state.consultantData;
-  const selectedType=es?.typeLabel||(isConsMode?(isSpecial?'On-Call - Weekend':'Normal Hours - Weekday'):(isSpecial?'WE Shift - 08H00':'WD Shift - 08H00'));
+  const selectedType=es?.typeLabel||(isConsMode?(isSpecial?'On Call - Weekend':'Normal Hours - Weekday'):(isSpecial?'WE Shift - 08H00':'WD Shift - 08H00'));
   const phStyle=phName?'color:#8B1A1A;font-weight:600;':'';
   const phLetter=(state.phLetterMap&&state.phLetterMap[d])||'';
   const dateCell=phName
@@ -3210,7 +3214,7 @@ function attachEditHandlers(){
         const isSpecialNew=btn.dataset.isSpecial==='1';
         const isConsMode=activeProfile&&activeProfile.roster_type==='consultant'&&state.consultantData;
         const defaultLabel=isConsMode
-          ?(isSpecialNew?'On-Call - Weekend':'Normal Hours - Weekday')
+          ?(isSpecialNew?'On Call - Weekend':'Normal Hours - Weekday')
           :(isSpecialNew?'WE Shift - 08H00':'WD Shift - 08H00');
         const defaultTimes=isConsMode?(CONSULTANT_SHIFT_TIMES[defaultLabel]||{}):(SHIFT_TIMES[defaultLabel]||{});
         const def=isConsMode
@@ -3305,7 +3309,7 @@ $('proceedDownloadBtn').addEventListener('click',async()=>{
     a.href=url;a.download=`Duty_Roster_${safe}_${MONTH_NAMES[month]}_${year}.xlsx`;
     document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
   }catch(err){alert('Error: '+err.message);console.error(err);}
-  btn.disabled=false;btn.innerHTML='&#8595; Download Duty Roster';
+  btn.disabled=false;btn.innerHTML='<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:5px"><path d="M12 2v10"/><path d="m5 15 7 7 7-7"/><line x1="5" y1="22" x2="19" y2="22"/></svg>Download Duty Roster';
 });
 
 $('annexureCBtn').addEventListener('click',async()=>{
@@ -3320,7 +3324,7 @@ $('annexureCBtn').addEventListener('click',async()=>{
     a.href=url; a.download=`Annexure_C_${safe}_${MONTH_NAMES[d.month]}_${d.year}.docx`;
     document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
   }catch(err){alert('Error generating Annexure C: '+err.message);console.error(err);}
-  btn.disabled=false; btn.innerHTML='&#8595; Download Annexure C (Overtime) Form';
+  btn.disabled=false; btn.innerHTML='<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:5px"><path d="M12 2v10"/><path d="m5 15 7 7 7-7"/><line x1="5" y1="22" x2="19" y2="22"/></svg>Download Annexure C (Overtime) Form';
 });
 
 $('z1aBtn').addEventListener('click',async()=>{
@@ -3335,7 +3339,7 @@ $('z1aBtn').addEventListener('click',async()=>{
     a.href=url; a.download=`Z1a_Leave_${safe}_${MONTH_NAMES[d.month]}_${d.year}.docx`;
     document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
   }catch(err){alert('Error generating Z1(a): '+err.message);console.error(err);}
-  btn.disabled=false; btn.innerHTML='&#8595; Download Z1(a) Leave Form';
+  btn.disabled=false; btn.innerHTML='<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:5px"><path d="M12 2v10"/><path d="m5 15 7 7 7-7"/><line x1="5" y1="22" x2="19" y2="22"/></svg>Download Z1(a) Leave Form';
 });
 
 function readFile(file){
@@ -3993,16 +3997,4 @@ document.addEventListener('DOMContentLoaded', () => {
   if (cZone) {
     cZone.addEventListener('dragover', e => { e.preventDefault(); cZone.classList.add('drag-over'); });
     cZone.addEventListener('dragleave', () => cZone.classList.remove('drag-over'));
-    cZone.addEventListener('drop', e => {
-      e.preventDefault(); cZone.classList.remove('drag-over');
-      const files = Array.from(e.dataTransfer.files).filter(f => f.name.endsWith('.pdf'));
-      if (files.length) addConsultantFiles(files);
-    });
-  }
-
-  // Consultant parse is handled inside the main parseBtn click handler
-});
-
-</script>
-</body>
-</html>
+    cZone.addEventL
