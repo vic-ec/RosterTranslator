@@ -3437,21 +3437,25 @@ function showEcOffline(cachedProfile) {
 }
 
 async function initEcSelector() {
+  console.log('[EC] initEcSelector started');
   const cached = localStorage.getItem(LS_PROFILE_KEY);
   const cachedProfile = cached ? JSON.parse(cached) : null;
+  console.log('[EC] cached profile:', cachedProfile ? cachedProfile.ec_name : 'none');
 
   // Try fetching fresh profiles
   let profiles = null;
   try {
+    console.log('[EC] fetching profiles...');
     profiles = await fetchProfiles();
+    console.log('[EC] fetch succeeded, count:', profiles ? profiles.length : 0);
     // Cache the list for next time
     localStorage.setItem(LS_PROFILES_KEY, JSON.stringify(profiles));
   } catch (e) {
-    console.warn('Could not fetch EC profiles:', e.message || e);
+    console.warn('[EC] fetch failed:', e.message || e);
   }
 
   if (!profiles || profiles.length === 0) {
-    // Offline or no approved profiles — use cached profile if available
+    console.log('[EC] no profiles — showing offline');
     showEcOffline(cachedProfile);
     return;
   }
@@ -3460,7 +3464,7 @@ async function initEcSelector() {
   if (cachedProfile) {
     const still = profiles.find(p => p.ec_name === cachedProfile.ec_name);
     if (still) {
-      // Always use fresh data from Supabase (never trust cached profile fields)
+      console.log('[EC] restoring saved profile:', still.ec_name);
       const freshProfile = { ...still.profile, ec_name: still.ec_name, ec_short: still.ec_short || still.profile?.ec_short };
       applyProfile(freshProfile);
       showEcSelected(still.ec_name);
@@ -3469,6 +3473,7 @@ async function initEcSelector() {
   }
 
   // No saved selection — show picker
+  console.log('[EC] showing picker with', profiles.length, 'profiles');
   showEcPicker(profiles);
 }
 
@@ -3833,9 +3838,11 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Initialise EC selector independently so a crash above can't prevent it
+console.log('[EC] boot: readyState =', document.readyState);
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => initEcSelector());
+  document.addEventListener('DOMContentLoaded', () => { console.log('[EC] DOMContentLoaded fired'); initEcSelector(); });
 } else {
+  console.log('[EC] DOM already ready, calling directly');
   initEcSelector();
 }
 
