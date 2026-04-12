@@ -283,7 +283,7 @@ header h1 { font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.92); }
         </div>
         <div id="ecOfflineNote" style="display:none;" class="info-note">
           <span class="icon">&#x26A0;</span>
-          <span>Could not reach the server. Using last saved profile. Connect to the internet to refresh EC profiles.</span>
+          <span>Could not reach the EC profile server. Check your internet connection and refresh the page. If the problem persists, contact us to set up your EC offline.</span>
         </div>
       </div>
     </div>
@@ -3365,20 +3365,27 @@ const LS_PROFILES_KEY = 'ec_roster_profiles_list';
 let activeProfile = null;
 
 async function fetchProfiles() {
-  const res = await fetch(
-    `${SUPA_URL}/rest/v1/ec_profiles?status=eq.approved&select=id,ec_name,ec_short,profile`,
-    {
-      method: 'GET',
-      headers: {
-        'apikey': SUPA_ANON,
-        'Authorization': 'Bearer ' + SUPA_ANON,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 8000);
+  try {
+    const res = await fetch(
+      `${SUPA_URL}/rest/v1/ec_profiles?status=eq.approved&select=id,ec_name,ec_short,profile`,
+      {
+        method: 'GET',
+        signal: controller.signal,
+        headers: {
+          'apikey': SUPA_ANON,
+          'Authorization': 'Bearer ' + SUPA_ANON,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
       }
-    }
-  );
-  if (!res.ok) throw new Error('Fetch failed: ' + res.status);
-  return res.json();
+    );
+    if (!res.ok) throw new Error('Fetch failed: ' + res.status);
+    return res.json();
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 function applyProfile(profile) {
@@ -3423,9 +3430,9 @@ function showEcOffline(cachedProfile) {
     applyProfile(cachedProfile);
     showEcSelected(cachedProfile.ec_name || 'Saved EC');
   } else {
-    // No cache and no network — show picker with empty list and offline note
+    // No cache and no network — hide spinner, show just the warning
     $('ecLoadingRow').style.display = 'none';
-    $('ecPickerRow').style.display  = '';
+    $('ecPickerRow').style.display  = 'none';
   }
 }
 
@@ -3443,8 +3450,8 @@ async function initEcSelector() {
     console.warn('Could not fetch EC profiles:', e.message || e);
   }
 
-  if (!profiles) {
-    // Offline — use cached profile if available
+  if (!profiles || profiles.length === 0) {
+    // Offline or no approved profiles — use cached profile if available
     showEcOffline(cachedProfile);
     return;
   }
