@@ -451,9 +451,9 @@ header h1 { font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.92); }
         </div>
       </div>
       <div class="downloads-row">
-        <button class="btn btn-success" id="proceedDownloadBtn" style="display:none;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:5px"><path d="M12 2v10"/><path d="m5 15 7 7 7-7"/><line x1="5" y1="22" x2="19" y2="22"/></svg>Download Duty Roster</button>
-        <button class="btn-outline" id="annexureCBtn" style="display:none;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:5px"><path d="M12 2v10"/><path d="m5 15 7 7 7-7"/><line x1="5" y1="22" x2="19" y2="22"/></svg>Download Annexure C (Overtime) Form</button>
-        <button class="btn-outline" id="z1aBtn" style="display:none;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:5px"><path d="M12 2v10"/><path d="m5 15 7 7 7-7"/><line x1="5" y1="22" x2="19" y2="22"/></svg>Download Z1(a) Leave Form</button>
+        <button class="btn btn-success" id="proceedDownloadBtn" style="display:none;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:5px"><path d="M12 17V3"/><path d="m6 11 6 6 6-6"/><path d="M19 21H5"/></svg>Download Duty Roster</button>
+        <button class="btn-outline" id="annexureCBtn" style="display:none;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:5px"><path d="M12 17V3"/><path d="m6 11 6 6 6-6"/><path d="M19 21H5"/></svg>Download Annexure C (Overtime) Form</button>
+        <button class="btn-outline" id="z1aBtn" style="display:none;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:5px"><path d="M12 17V3"/><path d="m6 11 6 6 6-6"/><path d="M19 21H5"/></svg>Download Z1(a) Leave Form</button>
       </div>
       <div style="display:flex;justify-content:center;margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
         <button id="resetFormBtn" class="btn-clear">&#8635; Start Over</button>
@@ -3309,7 +3309,7 @@ $('proceedDownloadBtn').addEventListener('click',async()=>{
     a.href=url;a.download=`Duty_Roster_${safe}_${MONTH_NAMES[month]}_${year}.xlsx`;
     document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
   }catch(err){alert('Error: '+err.message);console.error(err);}
-  btn.disabled=false;btn.innerHTML='<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:5px"><path d="M12 2v10"/><path d="m5 15 7 7 7-7"/><line x1="5" y1="22" x2="19" y2="22"/></svg>Download Duty Roster';
+  btn.disabled=false;btn.innerHTML='<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:5px"><path d="M12 17V3"/><path d="m6 11 6 6 6-6"/><path d="M19 21H5"/></svg>Download Duty Roster';
 });
 
 $('annexureCBtn').addEventListener('click',async()=>{
@@ -3324,7 +3324,7 @@ $('annexureCBtn').addEventListener('click',async()=>{
     a.href=url; a.download=`Annexure_C_${safe}_${MONTH_NAMES[d.month]}_${d.year}.docx`;
     document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
   }catch(err){alert('Error generating Annexure C: '+err.message);console.error(err);}
-  btn.disabled=false; btn.innerHTML='<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:5px"><path d="M12 2v10"/><path d="m5 15 7 7 7-7"/><line x1="5" y1="22" x2="19" y2="22"/></svg>Download Annexure C (Overtime) Form';
+  btn.disabled=false; btn.innerHTML='<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:5px"><path d="M12 17V3"/><path d="m6 11 6 6 6-6"/><path d="M19 21H5"/></svg>Download Annexure C (Overtime) Form';
 });
 
 $('z1aBtn').addEventListener('click',async()=>{
@@ -3339,7 +3339,7 @@ $('z1aBtn').addEventListener('click',async()=>{
     a.href=url; a.download=`Z1a_Leave_${safe}_${MONTH_NAMES[d.month]}_${d.year}.docx`;
     document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
   }catch(err){alert('Error generating Z1(a): '+err.message);console.error(err);}
-  btn.disabled=false; btn.innerHTML='<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:5px"><path d="M12 2v10"/><path d="m5 15 7 7 7-7"/><line x1="5" y1="22" x2="19" y2="22"/></svg>Download Z1(a) Leave Form';
+  btn.disabled=false; btn.innerHTML='<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:5px"><path d="M12 17V3"/><path d="m6 11 6 6 6-6"/><path d="M19 21H5"/></svg>Download Z1(a) Leave Form';
 });
 
 function readFile(file){
