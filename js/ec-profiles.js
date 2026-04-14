@@ -1,0 +1,513 @@
+// ═══════════════════════════════════════════════════════════════
+// ec-profiles.js — EC profile system: Supabase fetch, profile
+//                  application, EC picker UI, and setup wizard.
+//
+//   fetchProfiles()                 → Promise<profile[]>
+//   applyProfile(profile)           — sets activeProfile + UI
+//   showEcSelected / showEcPicker / showEcOffline
+//   initEcSelector()                — boot entry point
+//   openWizard / closeWizard / wizGoto / wizValidate
+//   wizRenderPdf / wizSetupYDrag / wizInitColStep
+//   setupDivDrag / renderColChips / wizBuildJson
+//
+// Adding a new EC: insert a row in Supabase ec_profiles table.
+// No code changes required here.
+//
+// Depends on: config.js (SUPA_URL, SUPA_ANON, LS_PROFILE_KEY,
+//             LS_PROFILES_KEY, activeProfile)
+// ═══════════════════════════════════════════════════════════════
+
+// STEP 0 — EC PROFILE SYSTEM
+// ═══════════════════════════════════════════════════════════════
+
+const SUPA_URL  = 'https://dspemkdjifgpaswjwoij.supabase.co';
+const SUPA_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRzcGVta2RqaWZncGFzd2p3b2lqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1MTA1OTAsImV4cCI6MjA5MTA4NjU5MH0.a5TB2QInaOJ_a1frtkjlC2GSv_d_IIaBE4QLKIt8TWw';
+const LS_PROFILE_KEY  = 'ec_roster_profile';
+const LS_PROFILES_KEY = 'ec_roster_profiles_list';
+
+// Active EC profile — made available globally for future parser use
+let activeProfile = null;
+
+async function fetchProfiles() {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 8000);
+  try {
+    const res = await fetch(
+      `${SUPA_URL}/rest/v1/ec_profiles?status=eq.approved&select=id,ec_name,ec_short,profile`,
+      {
+        method: 'GET',
+        signal: controller.signal,
+        headers: {
+          'apikey': SUPA_ANON,
+          'Authorization': 'Bearer ' + SUPA_ANON,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      }
+    );
+    if (!res.ok) throw new Error('Fetch failed: ' + res.status);
+    return res.json();
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function applyProfile(profile) {
+  activeProfile = profile;
+  // Update header
+  const ecShort = profile.ec_short || profile.ec_name;
+  $('headerTitle').textContent = `EC Roster Translator — ${ecShort}`;
+  // Store in localStorage for offline use
+  localStorage.setItem(LS_PROFILE_KEY, JSON.stringify(profile));
+  // Show/hide consultant zone based on profile type
+  // (safe to call even before DOM is fully ready — guarded inside)
+  if (typeof updateConsultantZoneVisibility === 'function') updateConsultantZoneVisibility();
+}
+
+function showEcSelected(name) {
+  $('ecLoadingRow').style.display  = 'none';
+  $('ecPickerRow').style.display   = 'none';
+  $('ecSelectedRow').style.display = '';
+  $('ecSelectedName').textContent  = name;
+}
+
+function showEcPicker(profiles) {
+  $('ecLoadingRow').style.display  = 'none';
+  $('ecSelectedRow').style.display = 'none';
+  $('ecPickerRow').style.display   = '';
+  const sel = $('ecSelect');
+  // Clear existing options except the placeholder
+  while (sel.options.length > 1) sel.remove(1);
+  profiles.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.id;
+    opt.textContent = p.ec_name;
+    opt.dataset.profile = JSON.stringify(p.profile);
+    opt.dataset.name = p.ec_name;
+    sel.appendChild(opt);
+  });
+}
+
+function showEcOffline(cachedProfile) {
+  $('ecOfflineNote').style.display = '';
+  if (cachedProfile) {
+    applyProfile(cachedProfile);
+    showEcSelected(cachedProfile.ec_name || 'Saved EC');
+  } else {
+    // No cache and no network — hide spinner, show just the warning
+    $('ecLoadingRow').style.display = 'none';
+    $('ecPickerRow').style.display  = 'none';
+  }
+}
+
+async function initEcSelector() {
+  console.log('[EC] initEcSelector started');
+  const cached = localStorage.getItem(LS_PROFILE_KEY);
+  const cachedProfile = cached ? JSON.parse(cached) : null;
+  console.log('[EC] cached profile:', cachedProfile ? cachedProfile.ec_name : 'none');
+
+  // Try fetching fresh profiles
+  let profiles = null;
+  try {
+    console.log('[EC] fetching profiles...');
+    profiles = await fetchProfiles();
+    console.log('[EC] fetch succeeded, count:', profiles ? profiles.length : 0);
+    // Cache the list for next time
+    localStorage.setItem(LS_PROFILES_KEY, JSON.stringify(profiles));
+  } catch (e) {
+    console.warn('[EC] fetch failed:', e.message || e);
+  }
+
+  if (!profiles || profiles.length === 0) {
+    console.log('[EC] no profiles — showing offline');
+    showEcOffline(cachedProfile);
+    return;
+  }
+
+  // Online — check if we have a saved selection that still exists
+  if (cachedProfile) {
+    const still = profiles.find(p => p.ec_name === cachedProfile.ec_name);
+    if (still) {
+      console.log('[EC] restoring saved profile:', still.ec_name);
+      const freshProfile = { ...still.profile, ec_name: still.ec_name, ec_short: still.ec_short || still.profile?.ec_short };
+      applyProfile(freshProfile);
+      showEcSelected(still.ec_name);
+      return;
+    }
+  }
+
+  // No saved selection — show picker
+  console.log('[EC] showing picker with', profiles.length, 'profiles');
+  showEcPicker(profiles);
+}
+
+// Wire up EC selector events
+document.addEventListener('DOMContentLoaded', () => {
+
+  // Confirm button
+  $('ecConfirmBtn').addEventListener('click', () => {
+    const sel = $('ecSelect');
+    const opt = sel.options[sel.selectedIndex];
+    if (!opt || !opt.dataset.profile) return;
+    const profile = JSON.parse(opt.dataset.profile);
+    const fullProfile = { ...profile, ec_name: opt.dataset.name, ec_short: profile.ec_short || opt.dataset.name, roster_type: profile.roster_type };
+    applyProfile(fullProfile);
+    showEcSelected(opt.dataset.name);
+  });
+
+  // Enable confirm button only when an EC is selected
+  $('ecSelect').addEventListener('change', () => {
+    $('ecConfirmBtn').disabled = !$('ecSelect').value;
+  });
+
+  // Change link — go back to picker
+  $('ecChangeBtn').addEventListener('click', async () => {
+    $('ecSelectedRow').style.display = 'none';
+    $('ecLoadingRow').style.display  = '';
+    $('headerTitle').textContent = 'EC Roster Translator';
+    let profiles = null;
+    try {
+      profiles = await fetchProfiles();
+      localStorage.setItem(LS_PROFILES_KEY, JSON.stringify(profiles));
+    } catch(e) {
+      const cached = localStorage.getItem(LS_PROFILES_KEY);
+      profiles = cached ? JSON.parse(cached) : [];
+    }
+    showEcPicker(profiles);
+  });
+
+  // ── EC Profile Setup Wizard ──────────────────────────────────────────────────
+  let wizState = {
+    step: 1,
+    pdfBuf: null,          // ArrayBuffer of uploaded PDF
+    canvasScale: 1,        // PDF→canvas scale factor
+    pageW: 0, pageH: 0,    // rendered page dimensions (px)
+    divPositions: [],       // array of 5 x-positions (canvas px) for column dividers
+    draggingY: false,
+    draggingDiv: -1,
+    yLinePx: 0,             // red line Y (canvas px)
+  };
+  const COL_NAMES   = ['slot1','slot2','slot3','meetings','leave','call'];
+  const COL_COLOURS = ['#2D6B45','#1A6B3A','#5b9bd5','#9b59b6','#c0392b','#e67e22'];
+  const WIZ_STEPS   = 4;
+
+  function openWizard() {
+    wizState = { step:1, pdfBuf:null, canvasScale:1, pageW:0, pageH:0, divPositions:[], draggingY:false, draggingDiv:-1, yLinePx:0 };
+    $('wizardOverlay').style.display = '';
+    wizGoto(1);
+  }
+  function closeWizard() { $('wizardOverlay').style.display = 'none'; }
+
+  // ecNotListedLink is now a mailto link — no JS handler needed
+  $('wizCloseBtn').addEventListener('click', closeWizard);
+  $('wizardOverlay').addEventListener('click', e => { if (e.target === $('wizardOverlay')) closeWizard(); });
+
+  function wizGoto(step) {
+    wizState.step = step;
+    const isConsultant = document.querySelector('input[name="wizRosterType"]:checked')?.value === 'consultant';
+    // Show/hide steps
+    for (let i = 1; i <= WIZ_STEPS; i++) {
+      const el = $('wizStep' + i);
+      if (el) el.style.display = i === step ? '' : 'none';
+    }
+    // Update tabs
+    for (let i = 1; i <= WIZ_STEPS; i++) {
+      const tab = $('wizTab' + i);
+      if (!tab) continue;
+      tab.className = 'wiz-step-tab' + (i === step ? ' active' : (i < step ? ' done' : ''));
+    }
+    $('wizStepLabel').textContent = `Step ${step} of ${WIZ_STEPS}`;
+    $('wizBackBtn').style.display = step > 1 ? '' : 'none';
+    $('wizNextBtn').style.display = step < WIZ_STEPS ? '' : 'none';
+    $('wizSubmitBtn').style.display = step === WIZ_STEPS ? '' : 'none';
+    $('wizSubmitMsg').style.display = 'none';
+
+    // Step-specific init
+    if (step === 2 && !isConsultant) { wizGoto(4); return; } // skip steps 2+3 for shift-only
+    if (step === 3 && !isConsultant) { wizGoto(4); return; }
+    if (step === 3) wizInitColStep();
+    if (step === 4) wizBuildJson();
+  }
+
+  $('wizBackBtn').addEventListener('click', () => {
+    const isConsultant = document.querySelector('input[name="wizRosterType"]:checked')?.value === 'consultant';
+    if (wizState.step === 4 && !isConsultant) wizGoto(1);
+    else if (wizState.step > 1) wizGoto(wizState.step - 1);
+  });
+
+  $('wizNextBtn').addEventListener('click', () => {
+    if (!wizValidate(wizState.step)) return;
+    wizGoto(wizState.step + 1);
+  });
+
+  // Step 1: show/hide data_start_y when consultant selected
+  document.querySelectorAll('input[name="wizRosterType"]').forEach(r => {
+    r.addEventListener('change', () => {
+      const isCons = r.value === 'consultant';
+      $('wizDataYWrap').style.display = isCons ? '' : 'none';
+    });
+  });
+
+  function wizValidate(step) {
+    if (step === 1) {
+      if (!$('wizEcName').value.trim()) { $('wizEcName').focus(); return false; }
+      if (!$('wizEcShort').value.trim()) { $('wizEcShort').focus(); return false; }
+    }
+    if (step === 2) {
+      if (!wizState.pdfBuf) { $('wizPdfStatus').textContent = 'Please upload a PDF first.'; return false; }
+    }
+    return true;
+  }
+
+  // ── Step 2: PDF upload + render ──────────────────────────────────────────
+  $('wizPdfFile').addEventListener('change', async e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    $('wizPdfStatus').textContent = 'Rendering PDF…';
+    try {
+      wizState.pdfBuf = await readFile(file);
+      await wizRenderPdf(wizState.pdfBuf, 'wizCanvas', 'wizCanvasWrap', 'wizYLine');
+      $('wizPdfStatus').textContent = '✓ ' + file.name;
+      $('wizCanvasHint').style.display = '';
+    } catch(err) {
+      $('wizPdfStatus').textContent = 'Error: ' + err.message;
+    }
+    e.target.value = '';
+  });
+
+  async function wizRenderPdf(buf, canvasId, wrapId, yLineId) {
+    const pdf  = await pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise;
+    const page = await pdf.getPage(1);
+    const wrap = $(wrapId);
+    const maxW = wrap.clientWidth || 700;
+    const vp0  = page.getViewport({ scale: 1 });
+    const scale = Math.min((maxW - 2) / vp0.width, 2.5);
+    const vp   = page.getViewport({ scale });
+    const canvas = $(canvasId);
+    canvas.width  = vp.width;
+    canvas.height = vp.height;
+    wizState.canvasScale = scale;
+    wizState.pageW = vp.width;
+    wizState.pageH = vp.height;
+    await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+    wrap.style.display = '';
+    // Position red Y line
+    const dataY = parseInt($('wizDataY').value) || 188;
+    const yPx   = dataY * scale;
+    wizState.yLinePx = yPx;
+    if (yLineId) {
+      const yLine = $(yLineId);
+      yLine.style.top = yPx + 'px';
+      $('wizYVal').textContent = dataY;
+    }
+    // Default col dividers: evenly spaced from 20% to 90% of canvas width
+    if (wizState.divPositions.length === 0) {
+      wizState.divPositions = [0.25, 0.38, 0.51, 0.64, 0.77].map(f => Math.round(f * vp.width));
+    }
+    // Setup Y line drag
+    if (yLineId) wizSetupYDrag($(yLineId), $(wrapId));
+  }
+
+  function wizSetupYDrag(yLine, wrap) {
+    const startDrag = (clientY) => {
+      wizState.draggingY = true;
+      const rect = wrap.getBoundingClientRect();
+      const onMove = (cy) => {
+        if (!wizState.draggingY) return;
+        const raw   = cy - rect.top;
+        const clamped = Math.max(10, Math.min(wizState.pageH - 10, raw));
+        wizState.yLinePx = clamped;
+        yLine.style.top  = clamped + 'px';
+        const dataY = Math.round(clamped / wizState.canvasScale);
+        $('wizYVal').textContent = dataY;
+        $('wizDataY').value      = dataY;
+        $('wizDataYDisplay').textContent = dataY;
+      };
+      const onUp = () => {
+        wizState.draggingY = false;
+        document.removeEventListener('mousemove', mMove);
+        document.removeEventListener('mouseup', mUp);
+        document.removeEventListener('touchmove', tMove);
+        document.removeEventListener('touchend', mUp);
+      };
+      const mMove = e => onMove(e.clientY);
+      const tMove = e => onMove(e.touches[0].clientY);
+      const mUp = onUp;
+      document.addEventListener('mousemove', mMove);
+      document.addEventListener('mouseup',   mUp);
+      document.addEventListener('touchmove', tMove, {passive:false});
+      document.addEventListener('touchend',  mUp);
+    };
+    yLine.addEventListener('mousedown', e  => { e.preventDefault(); startDrag(e.clientY); });
+    yLine.addEventListener('touchstart', e => { e.preventDefault(); startDrag(e.touches[0].clientY); }, {passive:false});
+  }
+
+  // ── Step 3: column dividers ───────────────────────────────────────────────
+  function wizInitColStep() {
+    const wrap3 = $('wizCanvasWrap3');
+    const canvas3 = $('wizCanvas3');
+    // Copy rendered image from step 2 canvas
+    if (wizState.pageW && wizState.pageH) {
+      canvas3.width  = wizState.pageW;
+      canvas3.height = wizState.pageH;
+      const ctx = canvas3.getContext('2d');
+      ctx.drawImage($('wizCanvas'), 0, 0);
+    }
+    // Remove old dividers
+    wrap3.querySelectorAll('.wiz-div').forEach(d => d.remove());
+    // Build 5 dividers
+    COL_NAMES.slice(0, 5).forEach((_, i) => {
+      const div = document.createElement('div');
+      div.className = 'wiz-div';
+      div.dataset.idx = i;
+      div.style.cssText = `position:absolute;top:0;bottom:0;width:3px;background:${COL_COLOURS[i]};opacity:0.8;cursor:ew-resize;z-index:10;`;
+      div.style.left = wizState.divPositions[i] + 'px';
+      // Label pip
+      const pip = document.createElement('div');
+      pip.style.cssText = `position:absolute;top:4px;left:50%;transform:translateX(-50%);background:${COL_COLOURS[i]};color:#fff;font-size:9px;font-family:monospace;padding:1px 4px;border-radius:2px;white-space:nowrap;`;
+      pip.textContent = COL_NAMES[i + 1];
+      div.appendChild(pip);
+      wrap3.appendChild(div);
+      setupDivDrag(div, wrap3);
+    });
+    // Render colour chips
+    renderColChips();
+    if (wizState.pageW && wizState.pageH) wrap3.style.display = '';
+  }
+
+  function setupDivDrag(divEl, wrap) {
+    const startDrag = (clientX) => {
+      const idx  = parseInt(divEl.dataset.idx);
+      const rect = wrap.getBoundingClientRect();
+      const onMove = (cx) => {
+        const raw = cx - rect.left;
+        const lo  = idx > 0 ? wizState.divPositions[idx - 1] + 8 : 8;
+        const hi  = idx < 4 ? wizState.divPositions[idx + 1] - 8 : wizState.pageW - 8;
+        const clamped = Math.max(lo, Math.min(hi, raw));
+        wizState.divPositions[idx] = clamped;
+        divEl.style.left = clamped + 'px';
+        renderColChips();
+      };
+      const onUp = () => {
+        document.removeEventListener('mousemove', mMove);
+        document.removeEventListener('mouseup',   mUp);
+        document.removeEventListener('touchmove', tMove);
+        document.removeEventListener('touchend',  mUp);
+      };
+      const mMove = e => onMove(e.clientX);
+      const tMove = e => { e.preventDefault(); onMove(e.touches[0].clientX); };
+      const mUp = onUp;
+      document.addEventListener('mousemove', mMove);
+      document.addEventListener('mouseup',   mUp);
+      document.addEventListener('touchmove', tMove, {passive:false});
+      document.addEventListener('touchend',  mUp);
+    };
+    divEl.addEventListener('mousedown',  e => { e.preventDefault(); startDrag(e.clientX); });
+    divEl.addEventListener('touchstart', e => { e.preventDefault(); startDrag(e.touches[0].clientX); }, {passive:false});
+  }
+
+  function renderColChips() {
+    const wrap = $('wizColLabels');
+    wrap.innerHTML = '';
+    const positions = [0, ...wizState.divPositions, wizState.pageW];
+    COL_NAMES.forEach((name, i) => {
+      const x_min = Math.round(positions[i] / wizState.canvasScale);
+      const x_max = Math.round(positions[i + 1] / wizState.canvasScale);
+      const chip = document.createElement('span');
+      chip.className = 'wiz-col-chip';
+      chip.style.background = COL_COLOURS[i] + '22';
+      chip.style.color = COL_COLOURS[i];
+      chip.style.border = '1px solid ' + COL_COLOURS[i] + '66';
+      chip.textContent = `${name}: ${x_min}–${x_max}`;
+      wrap.appendChild(chip);
+    });
+  }
+
+  // ── Step 4: build profile JSON ───────────────────────────────────────────
+  function wizBuildJson() {
+    const isConsultant = document.querySelector('input[name="wizRosterType"]:checked')?.value === 'consultant';
+    const profile = {
+      ec_short:    $('wizEcShort').value.trim(),
+      roster_type: isConsultant ? 'consultant' : 'shift',
+    };
+    if (isConsultant) {
+      const dataY = parseInt($('wizDataY').value) || 188;
+      profile.data_start_y = dataY;
+      const positions = [0, ...wizState.divPositions, wizState.pageW];
+      const pdf_columns = {};
+      COL_NAMES.forEach((name, i) => {
+        pdf_columns[name] = {
+          x_min: Math.round(positions[i] / wizState.canvasScale),
+          x_max: Math.round(positions[i + 1] / wizState.canvasScale),
+        };
+      });
+      profile.pdf_columns = pdf_columns;
+      const t = id => $('wr_' + id).value.trim() || null;
+      const pair = (a, b) => (t(a) && t(b)) ? [t(a), t(b)] : null;
+      profile.time_rules = {
+        weekday_slot1_oncall:    { normal: pair('ws1c_nf','ws1c_nt'),  ot1: pair('ws1c_o1f','ws1c_o1t'),  ot2: pair('ws1c_o2f','ws1c_o2t')  },
+        weekday_slot1_no_oncall: { normal: pair('ws1n_nf','ws1n_nt'),  ot1: pair('ws1n_o1f','ws1n_o1t'),  ot2: pair('ws1n_o2f','ws1n_o2t')  },
+        weekday_slot2_3:         { normal: pair('ws23_nf','ws23_nt'),  ot1: pair('ws23_o1f','ws23_o1t'),  ot2: pair('ws23_o2f','ws23_o2t')  },
+        weekday_call_only:       { normal: pair('wco_nf','wco_nt'),    ot1: pair('wco_o1f','wco_o1t'),    ot2: pair('wco_o2f','wco_o2t')    },
+        weekend_ph:              { normal: pair('wph_nf','wph_nt'),    ot1: pair('wph_o1f','wph_o1t'),    ot2: pair('wph_o2f','wph_o2t')    },
+      };
+    }
+    $('wizJsonPreview').textContent = JSON.stringify(profile, null, 2);
+    return { ecName: $('wizEcName').value.trim(), profile };
+  }
+
+  // ── Submit ───────────────────────────────────────────────────────────────
+  $('wizSubmitBtn').addEventListener('click', async () => {
+    const { ecName, profile } = wizBuildJson();
+    const msg = $('wizSubmitMsg');
+    $('wizSubmitBtn').disabled = true;
+    $('wizSubmitBtn').textContent = 'Submitting…';
+    msg.style.display = '';
+    msg.style.color = 'var(--text-muted)';
+    msg.textContent = 'Submitting to Supabase…';
+    try {
+      const res = await fetch(`${SUPA_URL}/rest/v1/ec_profiles`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPA_ANON,
+          'Authorization': 'Bearer ' + SUPA_ANON,
+          'Prefer': 'return=minimal',
+        },
+        body: JSON.stringify({
+          ec_name: ecName,
+          ec_short: profile.ec_short,
+          status: 'pending',
+          profile: profile,
+        }),
+      });
+      if (res.ok || res.status === 201) {
+        msg.style.color = 'var(--success)';
+        msg.textContent = '✓ Submitted! An administrator will review and approve your profile. You\'ll be notified when it goes live.';
+        $('wizSubmitBtn').style.display = 'none';
+        $('wizNextBtn').style.display = 'none';
+      } else {
+        const txt = await res.text();
+        throw new Error(`Server responded ${res.status}: ${txt}`);
+      }
+    } catch(err) {
+      msg.style.color = 'var(--warn)';
+      msg.textContent = 'Error: ' + err.message;
+    }
+    $('wizSubmitBtn').disabled = false;
+    $('wizSubmitBtn').textContent = 'Submit for Approval';
+  });
+
+  // Run initialisation — called separately below
+});
+
+// Initialise EC selector independently so a crash above can't prevent it
+console.log('[EC] boot: readyState =', document.readyState);
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => { console.log('[EC] DOMContentLoaded fired'); initEcSelector(); });
+} else {
+  console.log('[EC] DOM already ready, calling directly');
+  initEcSelector();
+}
+
+
