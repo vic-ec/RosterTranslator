@@ -20,13 +20,6 @@
 // STEP 0 — EC PROFILE SYSTEM
 // ═══════════════════════════════════════════════════════════════
 
-const SUPA_URL  = 'https://dspemkdjifgpaswjwoij.supabase.co';
-const SUPA_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRzcGVta2RqaWZncGFzd2p3b2lqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1MTA1OTAsImV4cCI6MjA5MTA4NjU5MH0.a5TB2QInaOJ_a1frtkjlC2GSv_d_IIaBE4QLKIt8TWw';
-const LS_PROFILE_KEY  = 'ec_roster_profile';
-const LS_PROFILES_KEY = 'ec_roster_profiles_list';
-
-// Active EC profile — made available globally for future parser use
-let activeProfile = null;
 
 async function fetchProfiles() {
   const controller = new AbortController();

@@ -179,4 +179,13 @@ document.addEventListener('DOMContentLoaded', () => {
   // Drag and drop on consultant zone
   const cZone = $('consultantZone');
   if (cZone) {
-    cZone.addEventListener('dragover', e => { e.preventDefault(); cZone.classList.a
+    cZone.addEventListener('dragover', e => { e.preventDefault(); cZone.classList.add('drag-over'); });
+    cZone.addEventListener('dragleave', () => cZone.classList.remove('drag-over'));
+    cZone.addEventListener('drop', e => {
+      e.preventDefault();
+      cZone.classList.remove('drag-over');
+      if (e.dataTransfer.files.length) addConsultantFiles(Array.from(e.dataTransfer.files));
+    });
+  }
+
+});

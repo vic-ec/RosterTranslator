@@ -245,46 +245,6 @@ function dateKeyLocal(d) {
   return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 }
 
-const MONTH_NAMES=['January','February','March','April','May','June',
-  'July','August','September','October','November','December'];
-const ACTIVITY_TYPES=[
-  'WD Shift - 08H00','WD Shift - 12H00','WD Shift - 15H00','WD Shift - 22H00',
-  'WE Shift - 08H00','WE Shift - 13H00','WE Shift - 20H00',
-  'Leave - Annual','Leave - Sick','Leave - Family Responsibility',
-  'Leave - Study','Leave - Special','Leave - Prenatal','Leave - Maternity',
-  'Leave - Paternity','Workshop','Course','Conference'
-];
-
-// Consultant-mode activity types (replaces shift types when consultant roster active)
-const CONSULTANT_ACTIVITY_TYPES=[
-  'Normal Hours - Weekday',
-  'On Call - Weekday',
-  'On Call - Weekend',
-  'On Call - Public Holiday',
-  'Leave - Annual','Leave - Sick','Leave - Family Responsibility',
-  'Leave - Study','Leave - Special','Leave - Prenatal','Leave - Maternity',
-  'Leave - Paternity','Workshop','Course','Conference'
-];
-
-// Consultant shift type → auto-fill times (6 fields: nf,nt,ot1f,ot1t,ot2f,ot2t)
-const CONSULTANT_SHIFT_TIMES = {
-  'Normal Hours - Weekday':         {nf:'07H30',nt:'15H30',ot1f:'15H30',ot1t:'16H30',ot2f:'',    ot2t:''},
-  'On Call - Weekday':      {nf:'07H30',nt:'15H30',ot1f:'15H30',ot1t:'16H30',ot2f:'16H30',ot2t:'07H30'},
-  'On Call - Weekend':      {nf:'',     nt:'',     ot1f:'07H30',ot1t:'11H30',ot2f:'11H30',ot2t:'07H30'},
-  'On Call - Public Holiday':{nf:'',    nt:'',     ot1f:'07H30',ot1t:'11H30',ot2f:'11H30',ot2t:'07H30'},
-};
-
-// Shift type → auto-fill times
-const SHIFT_TIMES = {
-  'WD Shift - 08H00': {nf:'08H00',nt:'16H00',of:'16H00',ot:'18H00'},
-  'WD Shift - 12H00': {nf:'12H00',nt:'20H00',of:'20H00',ot:'22H00'},
-  'WD Shift - 15H00': {nf:'15H00',nt:'23H00',of:'23H00',ot:'01H00'},
-  'WD Shift - 22H00': {nf:'22H00',nt:'06H00',of:'06H00',ot:'10H00'},
-  'WE Shift - 08H00': {nf:'08H00',nt:'16H00',of:'16H00',ot:'20H00'},
-  'WE Shift - 13H00': {nf:'13H00',nt:'21H00',of:'21H00',ot:'23H00'},
-  'WE Shift - 20H00': {nf:'20H00',nt:'04H00',of:'04H00',ot:'10H00'},
-};
-
 // Return filtered ACTIVITY_TYPES for a given row (WD/WE/PH-aware)
 // isWE = Saturday or Sunday; isPH = public holiday (can be any day)
 function typeOptsFor(isWE, isPH, selectedType) {
