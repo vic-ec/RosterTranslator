@@ -2168,7 +2168,7 @@ const doc = new Document({ sections:[{ properties:{
       new TableRow({ children:[
         cell([
           p([t('REMARKS (If approved with a change in condition of payment or not approved, please provide motivation):',{size:14,italics:true})],{spacing:{before:0,after:0,line:240,lineRule:'exact'}}),
-          ...sigRow2Col(supervisorName, 'SIGNATURE OF HOD OR DESIGNEE', ''),
+          ...sigRow2Col('', 'SIGNATURE OF HOD OR DESIGNEE', ''),
         ], 10512, {gridSpan:27,borders:allSng,margins:{top:3,bottom:3,left:55,right:55}}),
       ]}),
 
@@ -3039,6 +3039,7 @@ function buildPreview(doctorName,targetMonth,targetYear){
   }
   $('previewArea').innerHTML=html;
   attachEditHandlers();
+  updateLeaveFields();
 }
 
 function makeRowInner(d,isWE,phName,dayName,es){
